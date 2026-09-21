@@ -1,0 +1,17 @@
+{
+  "id": "fadbb718-0ac2-4f91-b4f4-6d2bd85e91b0",
+  "nombreEmpresa": "PARIAS",
+  "ruc": null,
+  "logoUrl": null,
+  "colorPrimario": "#1f3a63",
+  "colorSecundario": "#8f2c22",
+  "telefonoContacto": null,
+  "emailContacto": null,
+  "direccionContacto": null,
+  "fechaFacturacionGlobal": 21,
+  "formatoBoletaDefault": "a4",
+  "modoCaja": "resumen",
+  "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+  "createdAt": "2026-09-21T19:50:59.400Z",
+  "updatedAt": "2026-09-21T19:51:14.007Z"
+}

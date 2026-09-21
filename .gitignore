@@ -1,0 +1,23 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+backend/generated/
+backend/uploads/
+backend/backups/
+# Datos personales reales de clientes (semilla): no subir a un repositorio
+backend/prisma/seed-data/
+
+# Datos reales de clientes y archivos sueltos: nunca al repositorio
+*.xls
+*.xlsx
+*.zip
+*.dump
+gcapi.dll
+*.conf.lock
+.claude/
+android/.claude/
+android/screen*.png

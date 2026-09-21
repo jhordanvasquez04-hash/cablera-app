@@ -1,0 +1,22 @@
+{
+  "id": "9e37123d-1f98-42c6-8808-23e33f48efbf",
+  "folio": "ST-0001",
+  "tipo": "Instalación TV",
+  "tipoServicioTecnicoId": "f0b1590a-8f94-4952-8e75-8ae0bedededa",
+  "cliente": {
+    "id": "76144ef3-8e0e-4886-9e72-55bb13e7e574",
+    "nombreCompleto": "Cliente Demo 3"
+  },
+  "tecnico": "Juan",
+  "estado": "liquidado",
+  "datosPropios": {
+    "Marca": "X",
+    "Serie": "123"
+  },
+  "comentario": "Llamé al cliente",
+  "comentarioFinal": "Listo",
+  "fechaCreacion": "2026-09-21T19:51:26.952Z",
+  "fechaProgramada": "2026-09-21T19:51:26.625Z",
+  "fechaLiquidacion": "2026-09-21T19:51:27.031Z",
+  "registradoPor": "Cobrador Demo"
+}

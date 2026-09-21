@@ -1,0 +1,26 @@
+[
+  {
+    "id": "548da12f-9a0a-4c69-ad72-9666cf57a73e",
+    "nombre": "Combustible",
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:50:59.453Z"
+  },
+  {
+    "id": "418434a9-11de-4d10-9dba-0bd1dcf7ddda",
+    "nombre": "Equipos",
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:50:59.463Z"
+  },
+  {
+    "id": "8b67093e-ccf6-4197-82e9-feef5d5c74fd",
+    "nombre": "Mantenimiento",
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:50:59.429Z"
+  },
+  {
+    "id": "0fdfa7b3-85ba-45a1-bdd9-021e5f394426",
+    "nombre": "Sueldos",
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:50:59.444Z"
+  }
+]

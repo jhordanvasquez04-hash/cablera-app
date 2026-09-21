@@ -1,0 +1,9 @@
+{
+  "accessToken": "token-de-prueba",
+  "usuario": {
+    "id": "7c3772b6-3487-47ee-8915-e32df886c6e5",
+    "nombre": "Administrador",
+    "email": "gestor@parias.test",
+    "rol": "gestor"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "id": "c29a8eeb-92f9-4b70-8c99-aa5a7b12dba8",
+  "numeroContrato": "MUS-0019",
+  "dni": "10000004",
+  "nombreCompleto": "Cliente Demo 4",
+  "telefono": null,
+  "direccion": null,
+  "zonaId": "43d4d418-3549-43d9-871a-b0a17c368378",
+  "estadoServicio": "retirado",
+  "fechaAlta": "2026-01-01T00:00:00.000Z",
+  "fechaBaja": "2026-09-21T19:51:26.266Z",
+  "motivoBaja": "No pagó",
+  "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+  "createdAt": "2026-09-21T19:51:04.880Z",
+  "updatedAt": "2026-09-21T19:51:26.273Z",
+  "zona": {
+    "id": "43d4d418-3549-43d9-871a-b0a17c368378",
+    "nombre": "LA MUSHCA",
+    "codigo": "MUS",
+    "correlativoActual": 44,
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:51:03.918Z",
+    "updatedAt": "2026-09-21T19:51:03.918Z"
+  },
+  "serviciosContratados": [
+    {
+      "id": "a34abd82-ece6-4017-96a1-f45263133c13",
+      "clienteId": "c29a8eeb-92f9-4b70-8c99-aa5a7b12dba8",
+      "tipoServicioId": "55afc787-6b52-468b-aefe-08621a3e86c8",
+      "montoBase": 60,
+      "fechaFacturacionOverride": null,
+      "estado": "activo",
+      "fechaAlta": "2026-01-01T00:00:00.000Z",
+      "fechaBaja": null,
+      "motivoBaja": null,
+      "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+      "createdAt": "2026-09-21T19:51:04.880Z",
+      "updatedAt": "2026-09-21T19:51:04.880Z",
+      "tipoServicio": {
+        "id": "55afc787-6b52-468b-aefe-08621a3e86c8",
+        "nombre": "cable",
+        "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+        "createdAt": "2026-09-21T19:50:59.416Z"
+      },
+      "montoEfectivo": 60,
+      "descuentoVigente": null,
+      "deudaTotal": 60
+    }
+  ],
+  "deudaTotal": 60,
+  "montoEfectivo": 60,
+  "montoBase": 60
+}

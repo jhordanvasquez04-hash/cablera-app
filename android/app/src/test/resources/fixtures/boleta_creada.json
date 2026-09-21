@@ -1,0 +1,23 @@
+{
+  "id": "dd81c6a0-907a-4414-a8e3-e4ec78f4e3ea",
+  "numero": 1,
+  "clienteId": "76144ef3-8e0e-4886-9e72-55bb13e7e574",
+  "fecha": "2026-09-21T19:51:26.391Z",
+  "metodoPago": "yape",
+  "montoTotal": 25,
+  "estado": "emitida",
+  "reemplazaAId": null,
+  "registradoPorId": "59517026-a482-4544-a36b-26c38be01b4c",
+  "notasImportacion": null,
+  "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+  "createdAt": "2026-09-21T19:51:26.391Z",
+  "pagos": [
+    {
+      "id": "9e9fc76c-119c-43d0-b45f-fff8fe629963",
+      "boletaId": "dd81c6a0-907a-4414-a8e3-e4ec78f4e3ea",
+      "cargoId": "8587d73f-a868-4b2c-bbb3-d8bb648708bc",
+      "montoAplicado": 25,
+      "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843"
+    }
+  ]
+}

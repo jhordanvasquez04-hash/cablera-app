@@ -1,0 +1,38 @@
+[
+  {
+    "id": "da184ac1-a009-4f6c-805d-f5e052a9fafc",
+    "nombre": "CHOLOQUE",
+    "codigo": "CHO",
+    "correlativoActual": 10,
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:51:03.880Z",
+    "updatedAt": "2026-09-21T19:51:03.880Z"
+  },
+  {
+    "id": "d692fc1e-7c05-48c5-9784-4053e7128678",
+    "nombre": "CRUCE LAUREL",
+    "codigo": "CLA",
+    "correlativoActual": 12,
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:51:03.890Z",
+    "updatedAt": "2026-09-21T19:51:03.890Z"
+  },
+  {
+    "id": "774a7719-cf04-4639-9129-f759731c3b94",
+    "nombre": "CRUZ ROJA",
+    "codigo": "CRO",
+    "correlativoActual": 16,
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:51:03.896Z",
+    "updatedAt": "2026-09-21T19:51:03.896Z"
+  },
+  {
+    "id": "0df1eec1-e810-47d0-b03f-831fa7b86bfe",
+    "nombre": "EL LAUREL",
+    "codigo": "LAU",
+    "correlativoActual": 18,
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:51:03.908Z",
+    "updatedAt": "2026-09-21T19:51:03.908Z"
+  }
+]

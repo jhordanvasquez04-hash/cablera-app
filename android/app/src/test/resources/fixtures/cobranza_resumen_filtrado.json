@@ -1,0 +1,71 @@
+{
+  "cobradoMes": 0,
+  "deudaAcumulada": 195,
+  "egresosMes": 0,
+  "saldoNeto": 0,
+  "cobradoHoyPorUsuario": 0,
+  "cobrosHoyPorUsuarioCount": 0,
+  "clientesConDeudaCount": 5,
+  "clientes": [
+    {
+      "id": "a7f37d63-8300-4b51-b062-83288e1d0ffc",
+      "numeroContrato": "CHO-0009",
+      "nombreCompleto": "Cliente Demo 5",
+      "dni": null,
+      "telefono": null,
+      "zona": {
+        "id": "da184ac1-a009-4f6c-805d-f5e052a9fafc",
+        "nombre": "CHOLOQUE"
+      },
+      "montoBase": 40,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 40
+    },
+    {
+      "id": "80703f78-e836-4098-a9f7-bd07827c6ab8",
+      "numeroContrato": "CHO-0008",
+      "nombreCompleto": "Cliente Demo 6",
+      "dni": null,
+      "telefono": null,
+      "zona": {
+        "id": "da184ac1-a009-4f6c-805d-f5e052a9fafc",
+        "nombre": "CHOLOQUE"
+      },
+      "montoBase": 30,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 30
+    },
+    {
+      "id": "d8fd11a7-6a0e-417a-b1a1-88cd177882d3",
+      "numeroContrato": "CHO-0002",
+      "nombreCompleto": "Cliente Demo 7",
+      "dni": "10000005",
+      "telefono": null,
+      "zona": {
+        "id": "da184ac1-a009-4f6c-805d-f5e052a9fafc",
+        "nombre": "CHOLOQUE"
+      },
+      "montoBase": 50,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 50
+    },
+    {
+      "id": "fc902cae-c70b-40ea-b061-48dba272de33",
+      "numeroContrato": "CHO-0001",
+      "nombreCompleto": "Cliente Demo 8",
+      "dni": "10000006",
+      "telefono": "990000003",
+      "zona": {
+        "id": "da184ac1-a009-4f6c-805d-f5e052a9fafc",
+        "nombre": "CHOLOQUE"
+      },
+      "montoBase": 50,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 50
+    }
+  ]
+}

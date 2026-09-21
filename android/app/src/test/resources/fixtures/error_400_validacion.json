@@ -1,0 +1,10 @@
+{
+  "message": [
+    "dni must be longer than or equal to 1 characters",
+    "dni must be a string",
+    "nombreCompleto must be longer than or equal to 2 characters",
+    "zonaId must be a string"
+  ],
+  "error": "Bad Request",
+  "statusCode": 400
+}

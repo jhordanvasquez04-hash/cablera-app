@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f1215; font-variant-numeric: tabular-nums; }
+  a { color: #1f3a63; text-decoration: none; }
+  a:hover { color: #142845; }
+  input { font: inherit; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0f1215;display:flex;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#16191d">
+  <div style="width:100%;max-width:480px;min-height:100vh;background:#f4f5f7;display:flex;flex-direction:column;position:relative">
+
+    <sc-if value="{{ enLogin }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 22px;background:#16191d">
+        <div style="width:48px;height:48px;border-radius:13px;background:#fff;color:#16191d;display:grid;place-items:center;font-weight:700;font-size:17px">SA</div>
+        <h1 style="margin:20px 0 6px;font-family:'Source Serif 4',Georgia,serif;font-size:30px;font-weight:400;color:#fff;line-height:1.15">Panel del proveedor</h1>
+        <p style="margin:0 0 26px;font-size:14px;color:#aeb5bd">Acceso reservado al super_admin de la plataforma.</p>
+        <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#aeb5bd;margin-bottom:6px">Usuario</div>
+        <input defaultValue="super.admin" style="width:100%;border:1px solid #2c3238;border-radius:11px;padding:16px 15px;font-size:16px;outline:0;background:#1d2126;color:#fff;margin-bottom:14px" />
+        <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#aeb5bd;margin-bottom:6px">Contraseña</div>
+        <input defaultValue="••••••••" style="width:100%;border:1px solid #2c3238;border-radius:11px;padding:16px 15px;font-size:16px;outline:0;background:#1d2126;color:#fff;margin-bottom:22px" />
+        <div onClick="{{ entrar }}" style="padding:18px;border-radius:13px;background:#fff;color:#16191d;text-align:center;font-size:16.5px;font-weight:700;cursor:pointer">Ingresar</div>
+        <div style="font-size:12.5px;color:#aeb5bd;margin-top:16px;text-align:center">Cuenta separada de las empresas. No comparte base de datos con ellas.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ enApp }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;padding-bottom:80px">
+
+        <div style="background:#16191d;color:#fff;padding:14px 16px 16px;position:sticky;top:0;z-index:4">
+          <div style="display:flex;align-items:center;gap:11px">
+            <sc-if value="{{ conAtras }}" hint-placeholder-val="{{ false }}">
+              <span onClick="{{ atras }}" style="font-size:22px;cursor:pointer;line-height:1;flex:none">←</span>
+            </sc-if>
+            <sc-if value="{{ sinAtras }}" hint-placeholder-val="{{ true }}">
+              <div style="width:30px;height:30px;border-radius:8px;background:#2c3238;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none">SA</div>
+            </sc-if>
+            <div style="flex:1;min-width:0;line-height:1.2">
+              <div style="font-size:15px;font-weight:600">{{ titulo }}</div>
+              <div style="font-size:11.5px;color:#aeb5bd">{{ subtitulo }}</div>
+            </div>
+            <span onClick="{{ salir }}" style="font-size:12px;padding:7px 11px;border-radius:999px;background:#2c3238;font-weight:600;cursor:pointer;flex:none">Salir</span>
+          </div>
+          <sc-if value="{{ conBuscador }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:10px;background:#1d2126;border-radius:11px;padding:0 14px;margin-top:14px">
+              <span style="width:8px;height:8px;border:2px solid #aeb5bd;border-radius:50%;flex:none"></span>
+              <input value="{{ q }}" onChange="{{ onQ }}" placeholder="Buscar por nombre, RUC o subdominio" style="flex:1;min-width:0;border:0;outline:0;background:transparent;padding:14px 0;font-size:16px;color:#fff" />
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ verEmpresas }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+                <div style="flex:1;min-width:140px;background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:13px 15px">
+                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">{{ k.label }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;margin-top:4px">{{ k.valor }}</div>
+                  <div style="font-size:12px;color:#6d747e;margin-top:3px">{{ k.nota }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div onClick="{{ irAlta }}" style="padding:16px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:15.5px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Crear empresa</div>
+
+            <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px">
+              <sc-for list="{{ filtros }}" as="f" hint-placeholder-count="4">
+                <span onClick="{{ f.set }}" style="font-size:13px;padding:9px 14px;border-radius:999px;white-space:nowrap;cursor:pointer;font-weight:600;flex:none;background:{{ f.bg }};color:{{ f.fg }};border:{{ f.bd }}">{{ f.txt }}</span>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ sinResultados }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:26px 16px;text-align:center;font-size:14px;color:#6d747e">Ninguna empresa coincide.</div>
+            </sc-if>
+
+            <sc-for list="{{ empresas }}" as="e" hint-placeholder-count="4">
+              <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:15px;box-shadow:0 1px 2px rgba(16,24,40,0.05)">
+                <div onClick="{{ e.abrir }}" style="cursor:pointer">
+                  <div style="display:flex;align-items:flex-start;gap:12px">
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:16.5px;font-weight:600;line-height:1.25">{{ e.nombre }}</div>
+                      <div style="font-size:12.5px;color:#6d747e;margin-top:3px;font-family:'IBM Plex Mono',monospace">{{ e.ruc }} · {{ e.dominio }}</div>
+                    </div>
+                    <span style="font-size:12px;font-weight:600;padding:4px 9px;border-radius:5px;background:{{ e.bg }};color:{{ e.fg }};flex:none">{{ e.estado }}</span>
+                  </div>
+                  <div style="display:flex;gap:16px;margin-top:12px;padding:12px;border-radius:10px;background:#f7f8fa">
+                    <div>
+                      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">Rubro</div>
+                      <div style="font-size:14px;margin-top:2px">{{ e.rubro }}</div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">Plan</div>
+                      <div style="font-size:14px;margin-top:2px">{{ e.plan }}</div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">Clientes</div>
+                      <div style="font-size:14px;margin-top:2px;font-family:'IBM Plex Mono',monospace">{{ e.clientes }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:9px;margin-top:13px">
+                  <a href="Movil%20A%20-%20Pestanas.dc.html" style="flex:1;padding:14px;border-radius:11px;background:#1f3a63;color:#fff;text-align:center;font-size:14.5px;font-weight:700">Entrar</a>
+                  <span onClick="{{ e.abrir }}" style="flex:1;padding:14px;border-radius:11px;border:1px solid #cfd4da;text-align:center;font-size:14.5px;font-weight:600;color:#464d56;cursor:pointer">Ver detalle</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verDetalle }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:#16191d;color:#fff;border-radius:14px;padding:18px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#aeb5bd">Suscripción mensual</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:600;line-height:1;margin-top:5px">S/ 290</div>
+              <div style="font-size:13px;color:#aeb5bd;margin-top:6px">Cable Nor Andino · plan Estándar · al día</div>
+              <div style="display:flex;gap:9px;margin-top:16px">
+                <a href="Movil%20A%20-%20Pestanas.dc.html" style="flex:1;padding:15px;border-radius:11px;background:#fff;color:#16191d;text-align:center;font-size:15px;font-weight:700">Entrar a la empresa</a>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:12px">Datos de la instancia</div>
+              <sc-for list="{{ detalle }}" as="d" hint-placeholder-count="6">
+                <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f2f4f6;font-size:14px">
+                  <span style="color:#6d747e">{{ d.k }}</span>
+                  <span style="text-align:right;font-weight:500">{{ d.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:10px">Plan</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap">
+                <sc-for list="{{ planes }}" as="p" hint-placeholder-count="3">
+                  <span onClick="{{ p.set }}" style="font-size:13.5px;padding:11px 14px;border-radius:999px;cursor:pointer;font-weight:600;background:{{ p.bg }};color:{{ p.fg }};border:{{ p.bd }}">{{ p.txt }}</span>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px;color:#6d747e;margin-top:10px">{{ notaPlan }}</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span style="padding:15px;border-radius:11px;border:1px solid #cfd4da;text-align:center;font-size:15px;font-weight:600;color:#464d56;cursor:pointer">Restablecer clave del administrador</span>
+              <span style="padding:15px;border-radius:11px;border:1px solid #e3c9c6;text-align:center;font-size:15px;font-weight:600;color:#8f2c22;cursor:pointer">Suspender empresa</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verAlta }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px">
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Nombre de la empresa</div>
+                <input defaultValue="" placeholder="Ej. TV Cable del Valle" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+              </div>
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">RUC</div>
+                <input defaultValue="" placeholder="20xxxxxxxxx" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;font-family:'IBM Plex Mono',monospace;outline:0;color:#16191d" />
+              </div>
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Subdominio</div>
+                <div style="display:flex;align-items:center;border:1px solid #cfd4da;border-radius:10px;padding:0 14px">
+                  <input defaultValue="" placeholder="delvalle" style="flex:1;min-width:0;border:0;outline:0;padding:14px 0;font-size:15.5px;font-family:'IBM Plex Mono',monospace;color:#16191d" />
+                  <span style="flex:none;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:13px;color:#6d747e">.tuservicio.pe</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Contacto</div>
+                <input defaultValue="" placeholder="correo o teléfono" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:9px">Sistema</div>
+              <div style="display:flex;gap:8px">
+                <sc-for list="{{ rubros }}" as="r" hint-placeholder-count="2">
+                  <span onClick="{{ r.set }}" style="flex:1;text-align:center;padding:15px 8px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:600;background:{{ r.bg }};color:{{ r.fg }};border:{{ r.bd }}">{{ r.txt }}</span>
+                </sc-for>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:9px">Plan</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap">
+                <sc-for list="{{ planes }}" as="p" hint-placeholder-count="3">
+                  <span onClick="{{ p.set }}" style="font-size:13.5px;padding:11px 14px;border-radius:999px;cursor:pointer;font-weight:600;background:{{ p.bg }};color:{{ p.fg }};border:{{ p.bd }}">{{ p.txt }}</span>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px;color:#6d747e;margin-top:10px">{{ notaPlan }}</div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">Administrador inicial</div>
+              <sc-for list="{{ camposAdmin }}" as="c" hint-placeholder-count="3">
+                <div>
+                  <div style="font-size:13px;color:#464d56;margin-bottom:5px">{{ c.etiqueta }}</div>
+                  <input defaultValue="" placeholder="{{ c.ph }}" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:13px;font-size:15px;outline:0;color:#16191d" />
+                </div>
+              </sc-for>
+              <div style="font-size:12.5px;color:#6d747e">Ese administrador crea después a sus propios cobradores.</div>
+            </div>
+
+            <div onClick="{{ atras }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Crear y aprovisionar</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verActividad }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:13px;color:#5d646d">Solo eventos administrativos. Nunca datos de los clientes finales.</div>
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;overflow:hidden">
+              <sc-for list="{{ actividad }}" as="a" hint-placeholder-count="6">
+                <div style="padding:13px 15px;border-bottom:1px solid #f2f4f6">
+                  <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6d747e">{{ a.hora }}</span>
+                    <span style="font-size:12px;font-weight:600;padding:3px 8px;border-radius:5px;background:{{ a.bg }};color:{{ a.fg }}">{{ a.empresa }}</span>
+                  </div>
+                  <div style="font-size:14px;margin-top:5px">{{ a.texto }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none">
+          <div style="width:100%;max-width:480px;background:#fff;border-top:1px solid #e4e7ec;display:flex;pointer-events:auto">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+              <div onClick="{{ t.set }}" style="flex:1;padding:13px 2px 16px;text-align:center;cursor:pointer">
+                <div style="width:22px;height:22px;margin:0 auto 5px;border-radius:7px;background:{{ t.icono }}"></div>
+                <div style="font-size:11.5px;font-weight:600;color:{{ t.fg }}">{{ t.txt }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:932}}">
+const EMPRESAS = [
+  { nombre: "Cable Nor Andino", ruc: "20601234567", dominio: "norandino", rubro: "Cable", plan: "Estándar", clientes: "412", estado: "Activa", t: "ok" },
+  { nombre: "TV Cable del Valle", ruc: "20509887412", dominio: "delvalle", rubro: "Cable", plan: "Básico", clientes: "180", estado: "Prueba", t: "warn" },
+  { nombre: "Transportes Sol Naciente", ruc: "20488123900", dominio: "solnaciente", rubro: "Transporte", plan: "Estándar", clientes: "1,240", estado: "Activa", t: "ok" },
+  { nombre: "Cable Señal Sur", ruc: "20477009122", dominio: "senalsur", rubro: "Cable", plan: "Básico", clientes: "96", estado: "Suspendida", t: "bad" }
+];
+const T = { warn:{bg:"#f7f0e0",fg:"#7c5312"}, bad:{bg:"#f6eae8",fg:"#8f2c22"}, ok:{bg:"#e9efec",fg:"#1f5c45"}, info:{bg:"#eaeef5",fg:"#1f3a63"}, mute:{bg:"#ebedf0",fg:"#464d56"} };
+
+class Component extends DCLogic {
+  state = { sesion: false, tab: "empresas", pila: null, q: "", filtro: "Todas", plan: "Estándar", rubro: "Cable" };
+
+  renderVals() {
+    const s = this.state;
+    const p = s.pila;
+    const q = s.q.trim().toLowerCase();
+    const chip = (txt, on, set) => ({ txt, set, bg: on ? "#1f3a63" : "#ffffff", fg: on ? "#ffffff" : "#464d56", bd: on ? "1px solid #1f3a63" : "1px solid #cfd4da" });
+
+    const filtradas = EMPRESAS
+      .filter(e => s.filtro === "Todas" || e.estado === s.filtro.replace("Activas", "Activa").replace("Suspendidas", "Suspendida"))
+      .filter(e => !q || e.nombre.toLowerCase().includes(q) || e.ruc.includes(q) || e.dominio.includes(q));
+
+    const titulos = { detalle: ["Cable Nor Andino", "norandino.tuservicio.pe"], alta: ["Crear empresa", "Se aprovisiona su propia instancia"] };
+    const base = { empresas: ["Empresas", "6 activas · 2 en prueba"], actividad: ["Actividad", "Últimos eventos administrativos"] };
+    const par = p && titulos[p] ? titulos[p] : base[s.tab];
+
+    return {
+      enLogin: !s.sesion, enApp: s.sesion,
+      entrar: () => this.setState({ sesion: true }),
+      salir: () => this.setState({ sesion: false, pila: null }),
+      titulo: par[0], subtitulo: par[1],
+      conAtras: !!p, sinAtras: !p,
+      atras: () => this.setState({ pila: null }),
+      conBuscador: !p && s.tab === "empresas",
+      q: s.q, onQ: e => this.setState({ q: e.target.value }),
+      verEmpresas: !p && s.tab === "empresas",
+      verActividad: !p && s.tab === "actividad",
+      verDetalle: p === "detalle", verAlta: p === "alta",
+      irAlta: () => this.setState({ pila: "alta" }),
+      tabs: [["empresas", "Empresas"], ["actividad", "Actividad"]].map(([id, txt]) => {
+        const on = !p && s.tab === id;
+        return { txt, icono: on ? "#16191d" : "#cfd4da", fg: on ? "#16191d" : "#6d747e", set: () => this.setState({ tab: id, pila: null }) };
+      }),
+      kpis: [
+        { label: "Empresas activas", valor: "6", nota: "4 cable · 2 transporte" },
+        { label: "En prueba", valor: "2", nota: "vencen en 12 y 19 días" },
+        { label: "Clientes gestionados", valor: "3,184", nota: "todas las instancias" },
+        { label: "Suscripción del mes", valor: "S/ 1,740", nota: "cobrado" }
+      ],
+      filtros: ["Todas", "Activas", "Prueba", "Suspendidas"].map(f => chip(f, s.filtro === f, () => this.setState({ filtro: f }))),
+      sinResultados: filtradas.length === 0,
+      empresas: filtradas.map(e => ({
+        nombre: e.nombre, ruc: e.ruc, dominio: e.dominio + ".tuservicio.pe",
+        rubro: e.rubro, plan: e.plan, clientes: e.clientes,
+        estado: e.estado, bg: T[e.t].bg, fg: T[e.t].fg,
+        abrir: () => this.setState({ pila: "detalle" })
+      })),
+      detalle: [
+        { k: "RUC", v: "20601234567" }, { k: "Subdominio", v: "norandino" },
+        { k: "Rubro", v: "Cable" }, { k: "Clientes", v: "412" },
+        { k: "Usuarios", v: "3 (1 admin, 2 cobradores)" }, { k: "Alta", v: "12 ene. 2025" },
+        { k: "Última actividad", v: "hoy 11:24" }
+      ],
+      planes: ["Básico", "Estándar", "Sin límite"].map(pl => chip(pl, s.plan === pl, () => this.setState({ plan: pl }))),
+      notaPlan: s.plan === "Básico" ? "Hasta 200 clientes y 2 usuarios."
+        : s.plan === "Estándar" ? "Hasta 1,000 clientes y 6 usuarios."
+        : "Sin tope de clientes ni de usuarios.",
+      rubros: ["Cable", "Transporte"].map(r => chip(r, s.rubro === r, () => this.setState({ rubro: r }))),
+      camposAdmin: [
+        { etiqueta: "Nombre", ph: "Apellidos y nombres" },
+        { etiqueta: "Usuario", ph: "nombre.apellido" },
+        { etiqueta: "Contraseña temporal", ph: "mínimo 8 caracteres" }
+      ],
+      actividad: [
+        { hora: "14/09 11:24", empresa: "Nor Andino", texto: "Creó el usuario cobrador nilda.r", bg: T.info.bg, fg: T.info.fg },
+        { hora: "14/09 09:02", empresa: "Del Valle", texto: "Completó la carga inicial de 180 clientes", bg: T.info.bg, fg: T.info.fg },
+        { hora: "13/09 23:00", empresa: "Nor Andino", texto: "Copia automática a Excel ejecutada", bg: T.info.bg, fg: T.info.fg },
+        { hora: "13/09 18:41", empresa: "Sol Naciente", texto: "Actualizó su plan a Estándar", bg: T.ok.bg, fg: T.ok.fg },
+        { hora: "11/09 10:15", empresa: "Señal Sur", texto: "Suspendida por falta de pago de la suscripción", bg: T.bad.bg, fg: T.bad.fg },
+        { hora: "01/09 00:05", empresa: "Todas", texto: "Generación mensual de cargos ejecutada sin errores", bg: T.mute.bg, fg: T.mute.fg }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

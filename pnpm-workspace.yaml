@@ -1,0 +1,18 @@
+packages:
+  - "backend"
+  - "frontend"
+  - "packages/*"
+allowBuilds:
+  '@nestjs/core': true
+  '@prisma/client': true
+  '@prisma/engines': true
+  bcrypt: true
+  esbuild: true
+  prisma: true
+
+# Parches de seguridad de dependencias transitivas (mismo major, sin cambios de API).
+overrides:
+  lodash: ^4.18.1
+  qs: ^6.15.2
+  body-parser: ^1.20.6
+  multer: ^2.3.0

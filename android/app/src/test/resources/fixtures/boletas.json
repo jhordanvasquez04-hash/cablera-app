@@ -1,0 +1,30 @@
+[
+  {
+    "id": "50ddee79-354a-48da-9efa-86322e377191",
+    "folio": "001-0002",
+    "fecha": "2026-09-21T19:51:26.469Z",
+    "cliente": {
+      "id": "7d7f86f2-f2b0-46b5-98b8-c99d93102d4f",
+      "nombreCompleto": "Cliente Demo 2",
+      "zona": "LAS PIRIRAS"
+    },
+    "concepto": "Set 2026 (saldo)",
+    "metodoPago": "efectivo",
+    "montoTotal": 20,
+    "estado": "emitida"
+  },
+  {
+    "id": "dd81c6a0-907a-4414-a8e3-e4ec78f4e3ea",
+    "folio": "001-0001",
+    "fecha": "2026-09-21T19:51:26.391Z",
+    "cliente": {
+      "id": "76144ef3-8e0e-4886-9e72-55bb13e7e574",
+      "nombreCompleto": "Cliente Demo 3",
+      "zona": "LAS PIRIRAS"
+    },
+    "concepto": "Set 2026",
+    "metodoPago": "yape",
+    "montoTotal": 25,
+    "estado": "emitida"
+  }
+]

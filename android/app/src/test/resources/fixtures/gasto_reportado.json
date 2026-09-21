@@ -1,0 +1,15 @@
+{
+  "id": "807dca7f-9c4e-4b15-8d01-b919d751570e",
+  "usuarioId": "59517026-a482-4544-a36b-26c38be01b4c",
+  "fecha": "2026-09-21T19:51:26.676Z",
+  "monto": 12.5,
+  "descripcion": "Pasaje",
+  "estado": "pendiente",
+  "movimientoCajaId": null,
+  "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+  "createdAt": "2026-09-21T19:51:26.676Z",
+  "usuario": {
+    "id": "59517026-a482-4544-a36b-26c38be01b4c",
+    "nombre": "Cobrador Demo"
+  }
+}

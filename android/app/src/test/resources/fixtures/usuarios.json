@@ -1,0 +1,16 @@
+[
+  {
+    "id": "7c3772b6-3487-47ee-8915-e32df886c6e5",
+    "nombre": "Administrador",
+    "email": "gestor@parias.test",
+    "rol": "gestor",
+    "createdAt": "2026-09-21T19:50:59.255Z"
+  },
+  {
+    "id": "59517026-a482-4544-a36b-26c38be01b4c",
+    "nombre": "Cobrador Demo",
+    "email": "cobrador@parias.test",
+    "rol": "cobrador",
+    "createdAt": "2026-09-21T19:50:59.390Z"
+  }
+]

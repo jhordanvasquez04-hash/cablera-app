@@ -1,0 +1,66 @@
+# Producción (Dokploy → tipo "Compose", archivo docker-compose.prod.yml).
+# Las variables se definen en la pestaña "Environment" de Dokploy (ver .env.production.example).
+# No publica puertos: los dominios y el HTTPS los gestiona Traefik desde la pestaña "Domains":
+#   api.tu-dominio.com -> servicio backend, puerto 3000
+#   app.tu-dominio.com -> servicio frontend, puerto 80
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Define POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      CORS_ORIGIN: ${CORS_ORIGIN:?Define CORS_ORIGIN}
+      # Solo los usa `pnpm prisma:seed` (primer arranque); en producción son obligatorios.
+      SEED_EMPRESA_SLUG: ${SEED_EMPRESA_SLUG:-}
+      SEED_EMPRESA_NOMBRE: ${SEED_EMPRESA_NOMBRE:-}
+      SEED_GESTOR_EMAIL: ${SEED_GESTOR_EMAIL:-}
+      SEED_GESTOR_PASSWORD: ${SEED_GESTOR_PASSWORD:-}
+      SEED_GESTOR_NOMBRE: ${SEED_GESTOR_NOMBRE:-}
+      SEED_COBRADOR_EMAIL: ${SEED_COBRADOR_EMAIL:-}
+      SEED_COBRADOR_PASSWORD: ${SEED_COBRADOR_PASSWORD:-}
+      SEED_SUPERADMIN_EMAIL: ${SEED_SUPERADMIN_EMAIL:-}
+      SEED_SUPERADMIN_PASSWORD: ${SEED_SUPERADMIN_PASSWORD:-}
+    volumes:
+      - uploads:/app/backend/uploads
+      - backups:/app/backend/backups
+    expose:
+      - "3000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:?Define VITE_API_URL}
+    restart: unless-stopped
+    expose:
+      - "80"
+
+volumes:
+  postgres_data:
+  uploads:
+  backups:

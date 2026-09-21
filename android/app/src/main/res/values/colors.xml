@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mismos defaults de Configuracion.colorPrimario / colorSecundario en backend/prisma/schema.prisma -->
+    <color name="cablera_primary">#2563EB</color>
+    <color name="cablera_secondary">#1E293B</color>
+</resources>

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "d24aafbf-a7dc-49c4-874e-426e7d4b6cb8",
+    "tipo": "egreso",
+    "fecha": "2026-09-21T19:51:26.625Z",
+    "monto": 15.5,
+    "metodoPago": "efectivo",
+    "categoriaId": "548da12f-9a0a-4c69-ad72-9666cf57a73e",
+    "categoria": "Combustible",
+    "descripcion": "Compra"
+  },
+  {
+    "id": "f3992127-0669-4a2e-a2df-3dcd3adcc678",
+    "tipo": "ingreso",
+    "fecha": "2026-09-21T19:51:26.625Z",
+    "monto": 100,
+    "metodoPago": "yape",
+    "categoriaId": null,
+    "categoria": null,
+    "descripcion": "Aporte"
+  }
+]

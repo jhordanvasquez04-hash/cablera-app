@@ -1,0 +1,10 @@
+{
+  "id": "fadbb718-0ac2-4f91-b4f4-6d2bd85e91b0",
+  "nombreEmpresa": "PARIAS",
+  "logoUrl": null,
+  "colorPrimario": "#1f3a63",
+  "colorSecundario": "#8f2c22",
+  "fechaFacturacionGlobal": 21,
+  "formatoBoletaDefault": "a4",
+  "modoCaja": "resumen"
+}

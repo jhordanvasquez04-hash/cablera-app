@@ -1,0 +1,9 @@
+{
+  "id": "ab7b8cfb-20d5-45e4-a342-feaa8ceb11d6",
+  "nombre": "Cobrador Dos",
+  "email": "cobrador2@parias.test",
+  "rol": "cobrador",
+  "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+  "createdAt": "2026-09-21T19:51:26.895Z",
+  "updatedAt": "2026-09-21T19:51:26.895Z"
+}

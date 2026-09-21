@@ -1,0 +1,13 @@
+[
+  {
+    "id": "2d6e3735-f1e2-445f-9813-129e7838c74b",
+    "clienteId": "ef38845c-f146-4720-917e-68bc71918b83",
+    "servicioContratadoId": "420453f1-3f01-4757-bfc1-324ac1993020",
+    "porcentaje": 10,
+    "fechaInicio": "2026-09-21T19:51:26.116Z",
+    "cantidadMeses": 2,
+    "fechaFin": "2026-11-21T19:51:26.116Z",
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:51:26.123Z"
+  }
+]

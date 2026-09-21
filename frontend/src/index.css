@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #1f3a63;
+  --color-secondary: #8f2c22;
+  /* Derivados en vivo del color que elija el gestor en Configuración, para que
+     estados hover/activos combinen con cualquier color primario, no solo el navy por defecto. */
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 82%, black);
+  --color-primary-tint: color-mix(in srgb, var(--color-primary) 9%, white);
+  --color-primary-tint-strong: color-mix(in srgb, var(--color-primary) 16%, white);
+}
+
+body {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  background-color: #f4f5f7;
+}
+
+@media print {
+  header {
+    display: none !important;
+  }
+}

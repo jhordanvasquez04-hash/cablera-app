@@ -1,0 +1,16 @@
+[
+  {
+    "id": "00e681e8-8ac0-410c-97b7-4ed287e99d9b",
+    "anio": 2026,
+    "mes": 9,
+    "montoCorrespondiente": 25,
+    "montoPagado": 0,
+    "saldo": 25,
+    "estado": "pendiente",
+    "servicioContratadoId": "a5dc52ea-a29f-42ee-9b3b-4d5635db657f",
+    "tipoServicio": {
+      "id": "55afc787-6b52-468b-aefe-08621a3e86c8",
+      "nombre": "cable"
+    }
+  }
+]

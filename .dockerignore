@@ -1,0 +1,20 @@
+# Imágenes de producción: solo el código necesario, sin secretos ni datos locales.
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+.git
+.env
+**/.env
+**/.env.*
+!**/.env.example
+android
+diseno-referencia
+backend/backups
+backend/uploads
+backend/prisma/seed-data
+*.zip
+*.xls
+*.xlsx
+*.lock
+gcapi.dll
+**/*.log

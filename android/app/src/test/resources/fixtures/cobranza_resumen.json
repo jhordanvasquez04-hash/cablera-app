@@ -1,0 +1,71 @@
+{
+  "cobradoMes": 0,
+  "deudaAcumulada": 6780,
+  "egresosMes": 0,
+  "saldoNeto": 0,
+  "cobradoHoyPorUsuario": 0,
+  "cobrosHoyPorUsuarioCount": 0,
+  "clientesConDeudaCount": 206,
+  "clientes": [
+    {
+      "id": "ef38845c-f146-4720-917e-68bc71918b83",
+      "numeroContrato": "MUS-0004",
+      "nombreCompleto": "Cliente Demo 1",
+      "dni": "10000001",
+      "telefono": null,
+      "zona": {
+        "id": "43d4d418-3549-43d9-871a-b0a17c368378",
+        "nombre": "LA MUSHCA"
+      },
+      "montoBase": 25,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 25
+    },
+    {
+      "id": "7d7f86f2-f2b0-46b5-98b8-c99d93102d4f",
+      "numeroContrato": "PIR-0024",
+      "nombreCompleto": "Cliente Demo 2",
+      "dni": "10000002",
+      "telefono": "990000001",
+      "zona": {
+        "id": "0d4567be-ce0f-419e-8f0c-274005e883f0",
+        "nombre": "LAS PIRIRAS"
+      },
+      "montoBase": 25,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 25
+    },
+    {
+      "id": "76144ef3-8e0e-4886-9e72-55bb13e7e574",
+      "numeroContrato": "PIR-0038",
+      "nombreCompleto": "Cliente Demo 3",
+      "dni": "10000003",
+      "telefono": "990000002",
+      "zona": {
+        "id": "0d4567be-ce0f-419e-8f0c-274005e883f0",
+        "nombre": "LAS PIRIRAS"
+      },
+      "montoBase": 25,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 25
+    },
+    {
+      "id": "c29a8eeb-92f9-4b70-8c99-aa5a7b12dba8",
+      "numeroContrato": "MUS-0019",
+      "nombreCompleto": "Cliente Demo 4",
+      "dni": "10000004",
+      "telefono": null,
+      "zona": {
+        "id": "43d4d418-3549-43d9-871a-b0a17c368378",
+        "nombre": "LA MUSHCA"
+      },
+      "montoBase": 60,
+      "suspendido": false,
+      "mesesPendientes": "Set",
+      "deudaTotal": 60
+    }
+  ]
+}

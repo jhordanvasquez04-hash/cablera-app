@@ -1,0 +1,13 @@
+# Copia este archivo como `release.properties` (está en .gitignore) y completa los valores.
+# También sirven como propiedades de Gradle (-PNOMBRE=valor) o variables de entorno.
+
+# URL HTTPS del backend desplegado, con "/" al final.
+CABLERA_API_URL=https://api.tu-dominio.com/
+
+# Keystore de firma (ruta relativa a la carpeta android/). Guárdala respaldada fuera del repo:
+# si se pierde, no podrás publicar actualizaciones de la app.
+CABLERA_KEYSTORE_FILE=cablera-release.jks
+CABLERA_KEYSTORE_PASSWORD=
+CABLERA_KEY_ALIAS=cablera
+# Opcional: si se omite se usa la misma contraseña de la keystore.
+CABLERA_KEY_PASSWORD=

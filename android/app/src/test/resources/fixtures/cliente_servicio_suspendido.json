@@ -1,0 +1,76 @@
+{
+  "id": "ef38845c-f146-4720-917e-68bc71918b83",
+  "numeroContrato": "MUS-0004",
+  "dni": "10000001",
+  "nombreCompleto": "Cliente Demo 1",
+  "telefono": "990000005",
+  "direccion": null,
+  "zonaId": "43d4d418-3549-43d9-871a-b0a17c368378",
+  "estadoServicio": "activo",
+  "fechaAlta": "2026-01-01T00:00:00.000Z",
+  "fechaBaja": null,
+  "motivoBaja": null,
+  "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+  "createdAt": "2026-09-21T19:51:04.741Z",
+  "updatedAt": "2026-09-21T19:51:25.956Z",
+  "zona": {
+    "id": "43d4d418-3549-43d9-871a-b0a17c368378",
+    "nombre": "LA MUSHCA",
+    "codigo": "MUS",
+    "correlativoActual": 44,
+    "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+    "createdAt": "2026-09-21T19:51:03.918Z",
+    "updatedAt": "2026-09-21T19:51:03.918Z"
+  },
+  "serviciosContratados": [
+    {
+      "id": "a5dc52ea-a29f-42ee-9b3b-4d5635db657f",
+      "clienteId": "ef38845c-f146-4720-917e-68bc71918b83",
+      "tipoServicioId": "55afc787-6b52-468b-aefe-08621a3e86c8",
+      "montoBase": 25,
+      "fechaFacturacionOverride": null,
+      "estado": "activo",
+      "fechaAlta": "2026-01-01T00:00:00.000Z",
+      "fechaBaja": null,
+      "motivoBaja": null,
+      "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+      "createdAt": "2026-09-21T19:51:04.741Z",
+      "updatedAt": "2026-09-21T19:51:04.741Z",
+      "tipoServicio": {
+        "id": "55afc787-6b52-468b-aefe-08621a3e86c8",
+        "nombre": "cable",
+        "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+        "createdAt": "2026-09-21T19:50:59.416Z"
+      },
+      "montoEfectivo": 25,
+      "descuentoVigente": null,
+      "deudaTotal": 25
+    },
+    {
+      "id": "420453f1-3f01-4757-bfc1-324ac1993020",
+      "clienteId": "ef38845c-f146-4720-917e-68bc71918b83",
+      "tipoServicioId": "e05d883d-ed05-4770-8d46-c93c9d936dd3",
+      "montoBase": 90,
+      "fechaFacturacionOverride": null,
+      "estado": "suspendido",
+      "fechaAlta": "2026-09-21T19:51:25.995Z",
+      "fechaBaja": null,
+      "motivoBaja": null,
+      "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+      "createdAt": "2026-09-21T19:51:25.995Z",
+      "updatedAt": "2026-09-21T19:51:26.060Z",
+      "tipoServicio": {
+        "id": "e05d883d-ed05-4770-8d46-c93c9d936dd3",
+        "nombre": "internet",
+        "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+        "createdAt": "2026-09-21T19:51:25.881Z"
+      },
+      "montoEfectivo": 90,
+      "descuentoVigente": null,
+      "deudaTotal": 0
+    }
+  ],
+  "deudaTotal": 25,
+  "montoEfectivo": 25,
+  "montoBase": 25
+}

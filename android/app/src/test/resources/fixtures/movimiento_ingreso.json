@@ -1,0 +1,11 @@
+{
+  "id": "f3992127-0669-4a2e-a2df-3dcd3adcc678",
+  "tipo": "ingreso",
+  "fecha": "2026-09-21T19:51:26.625Z",
+  "monto": 100,
+  "metodoPago": "yape",
+  "categoriaId": null,
+  "descripcion": "Aporte",
+  "empresaId": "3eacdd1d-2c62-4423-a3b8-7999da8e5843",
+  "createdAt": "2026-09-21T19:51:26.644Z"
+}

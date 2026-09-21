@@ -1,0 +1,426 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  gestor
+  cobrador
+  super_admin
+}
+
+enum EstadoEmpresa {
+  activa
+  suspendida
+}
+
+// Tenant: cada empresa de cable que usa la plataforma. `super_admin` es el único rol sin
+// empresaId (cuenta del "panel proveedor externo", fuera de cualquier tenant).
+// Fase 1 (aditiva): esta tabla y las relaciones de abajo se agregan sin que ningún
+// servicio las use todavía — todo el resto de la app sigue funcionando exactamente igual.
+model Empresa {
+  id                               String        @id @default(uuid())
+  nombre                           String
+  slug                             String        @unique
+  estado                           EstadoEmpresa @default(activa)
+  // Reemplazan los @default(autoincrement()) de Boleta.numero/ServicioTecnico.folio, que
+  // no se pueden particionar por tenant (una secuencia de Postgres es global). Se
+  // incrementan transaccionalmente igual que Zona.correlativoActual (ver zonas.service.ts).
+  correlativoBoletaActual          Int           @default(0)
+  correlativoServicioTecnicoActual Int           @default(0)
+  createdAt                        DateTime      @default(now())
+  updatedAt                        DateTime      @updatedAt
+
+  usuarios             Usuario[]
+  configuracion        Configuracion?
+  zonas                Zona[]
+  tiposServicio        TipoServicio[]
+  clientes             Cliente[]
+  serviciosContratados ServicioContratado[]
+  descuentos           Descuento[]
+  cargosMensuales      CargoMensual[]
+  boletas              Boleta[]
+  pagos                Pago[]
+  categoriasEgreso     CategoriaEgreso[]
+  movimientosCaja      MovimientoCaja[]
+  gastosReportados     GastoReportado[]
+  tiposServicioTecnico TipoServicioTecnico[]
+  serviciosTecnicos    ServicioTecnico[]
+
+  @@map("empresas")
+}
+
+model Usuario {
+  id                           String            @id @default(uuid())
+  nombre                       String
+  email                        String            @unique
+  passwordHash                 String
+  rol                          Rol               @default(gestor)
+  // null solo para super_admin (cuenta fuera de cualquier empresa).
+  // Único campo que sigue siendo nullable tras el corte de Fase 2: solo null para
+  // super_admin. Reforzado con un CHECK en SQL (ver migración) que Prisma no modela
+  // directamente — no se expresa aquí porque no hay una forma nativa de declararlo.
+  empresaId                    String?
+  empresa                      Empresa?          @relation(fields: [empresaId], references: [id])
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
+  boletasRegistradas           Boleta[]
+  gastosReportados             GastoReportado[]
+  serviciosTecnicosRegistrados ServicioTecnico[]
+
+  @@index([empresaId])
+  @@map("usuarios")
+}
+
+enum FormatoBoleta {
+  a4
+  ticket
+}
+
+enum ModoCaja {
+  resumen
+  apertura_cierre
+}
+
+// Una fila por empresa. Hasta Fase 1 esto era una fila única global (id=1, entero fijo);
+// el id ahora es uuid y empresaId es @unique para poder crear/buscar "la config de esta
+// empresa" de forma segura, incluso cuando exista más de una empresa (Fase 3).
+model Configuracion {
+  id                     String        @id @default(uuid())
+  nombreEmpresa          String
+  ruc                    String?
+  logoUrl                String?
+  colorPrimario          String        @default("#1f3a63")
+  colorSecundario        String        @default("#16191d")
+  telefonoContacto       String?
+  emailContacto          String?
+  direccionContacto      String?
+  fechaFacturacionGlobal Int           @default(1)
+  formatoBoletaDefault   FormatoBoleta @default(a4)
+  modoCaja               ModoCaja      @default(resumen)
+  empresaId              String        @unique
+  empresa                Empresa       @relation(fields: [empresaId], references: [id])
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  @@map("configuracion")
+}
+
+enum EstadoServicio {
+  activo
+  suspendido
+  retirado
+}
+
+enum EstadoCargo {
+  pendiente
+  parcial
+  pagado
+}
+
+enum MetodoPago {
+  efectivo
+  yape
+  plin
+  transferencia
+}
+
+enum EstadoBoleta {
+  emitida
+  anulada
+}
+
+enum TipoMovimientoCaja {
+  egreso
+  ingreso
+}
+
+enum EstadoGastoReportado {
+  pendiente
+  aprobado
+  rechazado
+}
+
+model Zona {
+  id                String    @id @default(uuid())
+  nombre            String
+  // Prefijo corto y editable, usado solo para generar el numeroContrato de clientes NUEVOS.
+  // Editar el código no afecta los numeroContrato ya asignados.
+  codigo            String
+  correlativoActual Int       @default(0)
+  empresaId         String
+  empresa           Empresa   @relation(fields: [empresaId], references: [id])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  clientes          Cliente[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+  @@map("zonas")
+}
+
+model TipoServicio {
+  id                   String               @id @default(uuid())
+  nombre               String
+  empresaId            String
+  empresa              Empresa              @relation(fields: [empresaId], references: [id])
+  createdAt            DateTime             @default(now())
+  serviciosContratados ServicioContratado[]
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+  @@map("tipos_servicio")
+}
+
+model Cliente {
+  id                   String               @id @default(uuid())
+  // Identificador real del servicio/contrato. Se asigna una sola vez al crear el
+  // cliente y nunca se recalcula, aunque después se edite el código de su zona.
+  numeroContrato       String
+  dni                  String?
+  nombreCompleto       String
+  telefono             String?
+  direccion            String?
+  zonaId               String
+  zona                 Zona                 @relation(fields: [zonaId], references: [id])
+  // Estado del cliente como tal (sigue siendo cliente de la empresa o no). Cada servicio
+  // contratado tiene además su propio estado — un cliente puede seguir activo con un
+  // servicio suspendido y otro activo.
+  estadoServicio       EstadoServicio       @default(activo)
+  fechaAlta            DateTime             @default(now())
+  fechaBaja            DateTime?
+  motivoBaja           String?
+  empresaId            String
+  empresa              Empresa              @relation(fields: [empresaId], references: [id])
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  serviciosContratados ServicioContratado[]
+  boletas              Boleta[]
+  serviciosTecnicos    ServicioTecnico[]
+  descuentos           Descuento[]
+  cargos               CargoMensual[]
+
+  @@unique([empresaId, numeroContrato])
+  @@index([empresaId])
+  @@map("clientes")
+}
+
+// Un servicio contratado por un cliente (ej. cable, internet). Un cliente puede tener
+// varios; cada uno se factura de forma independiente (su propio monto, su propio cargo
+// mensual, se puede suspender/dar de baja sin afectar a los demás servicios del cliente).
+model ServicioContratado {
+  id                       String         @id @default(uuid())
+  clienteId                String
+  cliente                  Cliente        @relation(fields: [clienteId], references: [id])
+  tipoServicioId           String
+  tipoServicio             TipoServicio   @relation(fields: [tipoServicioId], references: [id])
+  montoBase                Float
+  fechaFacturacionOverride Int?
+  estado                   EstadoServicio @default(activo)
+  fechaAlta                DateTime       @default(now())
+  fechaBaja                DateTime?
+  motivoBaja               String?
+  empresaId                String
+  empresa                  Empresa        @relation(fields: [empresaId], references: [id])
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  cargos                   CargoMensual[]
+  descuentos               Descuento[]
+
+  @@index([empresaId])
+  @@index([clienteId])
+  @@map("servicios_contratados")
+}
+
+model Descuento {
+  id                   String             @id @default(uuid())
+  // Denormalizado a propósito junto con servicioContratadoId: permite listar "todos los
+  // descuentos de este cliente" sin un join extra, sin perder a qué servicio pertenece cada uno.
+  clienteId            String
+  cliente              Cliente            @relation(fields: [clienteId], references: [id])
+  servicioContratadoId String
+  servicioContratado   ServicioContratado @relation(fields: [servicioContratadoId], references: [id])
+  porcentaje           Int
+  fechaInicio          DateTime           @default(now())
+  // Informativo (para mostrar "6 meses"); la vigencia real se decide con fechaFin.
+  cantidadMeses        Int?
+  fechaFin             DateTime
+  empresaId            String
+  empresa              Empresa            @relation(fields: [empresaId], references: [id])
+  createdAt            DateTime           @default(now())
+
+  @@index([empresaId])
+  @@index([servicioContratadoId])
+  @@map("descuentos")
+}
+
+model CargoMensual {
+  id                   String             @id @default(uuid())
+  // Denormalizado a propósito junto con servicioContratadoId, mismo motivo que en Descuento.
+  clienteId            String
+  cliente              Cliente            @relation(fields: [clienteId], references: [id])
+  servicioContratadoId String
+  servicioContratado   ServicioContratado @relation(fields: [servicioContratadoId], references: [id])
+  anio                 Int
+  mes                  Int
+  montoCorrespondiente Float
+  estado               EstadoCargo        @default(pendiente)
+  empresaId            String
+  empresa              Empresa            @relation(fields: [empresaId], references: [id])
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  pagos                Pago[]
+
+  @@unique([servicioContratadoId, anio, mes])
+  @@index([empresaId])
+  @@index([clienteId])
+  @@map("cargos_mensuales")
+}
+
+// El folio que se muestra al usuario es "001-{numero con 4 dígitos}" (serie fija "001").
+model Boleta {
+  id               String       @id @default(uuid())
+  // Ya no autoincrement (una secuencia de Postgres es global, no se puede particionar por
+  // tenant): se numera con el mismo patrón transaccional que Cliente.numeroContrato, sobre
+  // Empresa.correlativoBoletaActual (ver boletas.service.ts).
+  numero           Int
+  clienteId        String
+  cliente          Cliente      @relation(fields: [clienteId], references: [id])
+  fecha            DateTime     @default(now())
+  metodoPago       MetodoPago
+  montoTotal       Float
+  estado           EstadoBoleta @default(emitida)
+  // Boleta anterior que esta reemplaza, cuando viene de "Anular y reemitir".
+  reemplazaAId     String?      @unique
+  registradoPorId  String?
+  registradoPor    Usuario?     @relation(fields: [registradoPorId], references: [id])
+  // Código histórico del Excel importado, si la boleta viene de ahí.
+  notasImportacion String?
+  pagos            Pago[]
+  empresaId        String
+  empresa          Empresa      @relation(fields: [empresaId], references: [id])
+  createdAt        DateTime     @default(now())
+
+  @@unique([empresaId, numero])
+  @@map("boletas")
+}
+
+// Línea de aplicación de una boleta sobre un cargo puntual (una boleta puede cubrir varios cargos).
+model Pago {
+  id            String       @id @default(uuid())
+  boletaId      String
+  boleta        Boleta       @relation(fields: [boletaId], references: [id])
+  cargoId       String
+  cargo         CargoMensual @relation(fields: [cargoId], references: [id])
+  montoAplicado Float
+  empresaId     String
+  empresa       Empresa      @relation(fields: [empresaId], references: [id])
+
+  @@index([empresaId])
+  @@map("pagos")
+}
+
+model CategoriaEgreso {
+  id          String           @id @default(uuid())
+  nombre      String
+  empresaId   String
+  empresa     Empresa          @relation(fields: [empresaId], references: [id])
+  createdAt   DateTime         @default(now())
+  movimientos MovimientoCaja[]
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+  @@map("categorias_egreso")
+}
+
+model MovimientoCaja {
+  id          String             @id @default(uuid())
+  tipo        TipoMovimientoCaja
+  fecha       DateTime
+  monto       Float
+  metodoPago  MetodoPago
+  categoriaId String?
+  categoria   CategoriaEgreso?   @relation(fields: [categoriaId], references: [id])
+  descripcion String?
+  empresaId   String
+  empresa     Empresa            @relation(fields: [empresaId], references: [id])
+  createdAt   DateTime           @default(now())
+
+  @@index([empresaId])
+  @@map("movimientos_caja")
+}
+
+model GastoReportado {
+  id               String               @id @default(uuid())
+  usuarioId        String
+  usuario          Usuario              @relation(fields: [usuarioId], references: [id])
+  fecha            DateTime             @default(now())
+  monto            Float
+  descripcion      String
+  estado           EstadoGastoReportado @default(pendiente)
+  movimientoCajaId String?              @unique
+  empresaId        String
+  empresa          Empresa              @relation(fields: [empresaId], references: [id])
+  createdAt        DateTime             @default(now())
+
+  @@index([empresaId])
+  @@map("gastos_reportados")
+}
+
+enum EstadoServicioTecnico {
+  pendiente
+  liquidado
+}
+
+// Catálogo de tipos de orden de trabajo técnico (Instalación, Reparación, ...), definido por el
+// gestor en Ajustes. `camposDefinicion` es un arreglo JSON de nombres de campo (string[]); el
+// formulario de "Nuevo servicio" los muestra como campos de texto libres, guardados en
+// ServicioTecnico.datosPropios con esas mismas claves.
+model TipoServicioTecnico {
+  id               String            @id @default(uuid())
+  nombre           String
+  camposDefinicion Json              @default("[]")
+  empresaId        String
+  empresa          Empresa           @relation(fields: [empresaId], references: [id])
+  createdAt        DateTime          @default(now())
+  servicios        ServicioTecnico[]
+
+  @@unique([empresaId, nombre])
+  @@index([empresaId])
+  @@map("tipos_servicio_tecnico")
+}
+
+// Orden de trabajo técnico (instalación, reparación, mantenimiento...) sobre un cliente.
+model ServicioTecnico {
+  id                    String                @id @default(uuid())
+  // Ver el comentario equivalente en Boleta.numero: ya no autoincrement, se numera vía
+  // Empresa.correlativoServicioTecnicoActual (ver servicios-tecnicos.service.ts).
+  folio                 Int
+  tipoServicioTecnicoId String
+  tipoServicioTecnico   TipoServicioTecnico   @relation(fields: [tipoServicioTecnicoId], references: [id])
+  clienteId             String
+  cliente               Cliente               @relation(fields: [clienteId], references: [id])
+  tecnico               String?
+  estado                EstadoServicioTecnico @default(pendiente)
+  // Valores de los campos propios del tipo elegido, ej. {"Modelo de router": "TP-Link AX10"}.
+  datosPropios          Json                  @default("{}")
+  // Comentario al iniciar (creación) y al terminar (liquidar) el servicio; dos campos separados
+  // en vez de un hilo de comentarios, para mantener el modelo simple.
+  comentario            String?
+  comentarioFinal       String?
+  fechaCreacion         DateTime              @default(now())
+  fechaProgramada       DateTime?
+  fechaLiquidacion      DateTime?
+  registradoPorId       String?
+  registradoPor         Usuario?              @relation(fields: [registradoPorId], references: [id])
+  empresaId             String
+  empresa               Empresa               @relation(fields: [empresaId], references: [id])
+  createdAt             DateTime              @default(now())
+
+  @@unique([empresaId, folio])
+  @@map("servicios_tecnicos")
+}

@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eef0f3; font-variant-numeric: tabular-nums; }
+  a { color: #1f3a63; text-decoration: none; }
+  a:hover { color: #142845; }
+  input { font: inherit; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#eef0f3;display:flex;justify-content:center;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#16191d">
+  <div style="width:100%;max-width:480px;background:#f4f5f7;min-height:100vh;display:flex;flex-direction:column;position:relative">
+
+    <sc-if value="{{ enLogin }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;display:flex;flex-direction:column;background:#1f3a63;padding:0 22px">
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:26px;min-height:220px">
+          <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,0.16);color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px">CN</div>
+          <h1 style="margin:18px 0 4px;font-family:'Source Serif 4',Georgia,serif;font-size:30px;font-weight:400;color:#fff;line-height:1.15">Cable Nor Andino</h1>
+          <p style="margin:0;font-size:14px;color:#b9c6da">Gestión y cobranza</p>
+        </div>
+        <div style="background:#fff;border-radius:18px 18px 0 0;padding:24px 20px 28px;margin:0 -22px">
+          <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Usuario</div>
+          <input value="{{ usuario }}" onChange="{{ onUsuario }}" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:15px 14px;font-size:16px;outline:0;color:#16191d;margin-bottom:14px" />
+          <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Contraseña</div>
+          <input defaultValue="••••••••" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:15px 14px;font-size:16px;outline:0;color:#16191d;margin-bottom:20px" />
+          <div onClick="{{ entrar }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Ingresar</div>
+          <div style="text-align:center;font-size:13px;color:#6d747e;margin-top:16px">Demo: <span style="font-family:'IBM Plex Mono',monospace;color:#16191d">julio.m</span> administra todo, <span style="font-family:'IBM Plex Mono',monospace;color:#16191d">nilda.r</span> solo cobra.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ enApp }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;display:flex;flex-direction:column;padding-bottom:80px">
+
+        <div style="background:#1f3a63;color:#fff;padding:14px 16px 16px;position:sticky;top:0;z-index:4">
+          <div style="display:flex;align-items:center;gap:11px">
+            <sc-if value="{{ conAtras }}" hint-placeholder-val="{{ false }}">
+              <span onClick="{{ atras }}" style="font-size:22px;cursor:pointer;line-height:1;flex:none">←</span>
+            </sc-if>
+            <sc-if value="{{ sinAtras }}" hint-placeholder-val="{{ true }}">
+              <div style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.18);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none">CN</div>
+            </sc-if>
+            <div style="flex:1;min-width:0;line-height:1.2">
+              <div style="font-size:15px;font-weight:600">{{ titulo }}</div>
+              <div style="font-size:11.5px;color:#b9c6da">{{ subtitulo }}</div>
+            </div>
+            <span onClick="{{ cambiarRol }}" style="font-size:12px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,0.16);font-weight:600;cursor:pointer;flex:none">Rol</span>
+            <span onClick="{{ salir }}" style="font-size:12px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,0.16);font-weight:600;cursor:pointer;flex:none">Salir</span>
+          </div>
+          <sc-if value="{{ conBuscador }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.18);border-radius:11px;padding:0 14px;margin-top:14px">
+              <span style="width:8px;height:8px;border:2px solid #b9c6da;border-radius:50%;flex:none"></span>
+              <input value="{{ q }}" onChange="{{ onQ }}" placeholder="{{ ph }}" style="flex:1;min-width:0;border:0;outline:0;background:transparent;padding:14px 0;font-size:16px;color:#fff" />
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ verCobranza }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:10px">
+              <sc-for list="{{ resumen }}" as="r" hint-placeholder-count="2">
+                <div style="flex:1;background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:13px 15px">
+                  <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">{{ r.label }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;margin-top:4px;color:{{ r.color }}">{{ r.valor }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px">
+              <sc-for list="{{ zonas }}" as="z" hint-placeholder-count="4">
+                <span onClick="{{ z.set }}" style="font-size:13px;padding:9px 14px;border-radius:999px;white-space:nowrap;cursor:pointer;font-weight:600;flex:none;background:{{ z.bg }};color:{{ z.fg }};border:{{ z.bd }}">{{ z.txt }}</span>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ esAdmin }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ irNuevoCliente }}" style="padding:15px;border-radius:12px;border:1px dashed #1f3a63;text-align:center;font-size:15px;font-weight:600;color:#1f3a63;cursor:pointer">Registrar cliente nuevo</div>
+            </sc-if>
+            <sc-if value="{{ esCobrador }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ abrirGasto }}" style="padding:15px;border-radius:12px;border:1px dashed #1f3a63;text-align:center;font-size:15px;font-weight:600;color:#1f3a63;cursor:pointer">Reportar un gasto</div>
+            </sc-if>
+
+            <sc-for list="{{ lista }}" as="c" hint-placeholder-count="4">
+              <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:15px;box-shadow:0 1px 2px rgba(16,24,40,0.05)">
+                <div onClick="{{ c.abrir }}" style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:17px;font-weight:600;line-height:1.25">{{ c.nombre }}</div>
+                    <div style="font-size:13px;color:#6d747e;margin-top:3px">{{ c.direccion }}</div>
+                    <div style="font-size:13px;color:#6d747e">{{ c.zona }} · {{ c.mensual }}/mes</div>
+                  </div>
+                  <div style="text-align:right;flex:none">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;color:{{ c.color }}">{{ c.deuda }}</div>
+                    <div style="font-size:12.5px;color:#6d747e;font-weight:600">{{ c.meses }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:11px;flex-wrap:wrap">
+                  <sc-for list="{{ c.chips }}" as="m" hint-placeholder-count="2">
+                    <span style="font-size:12px;padding:4px 9px;border-radius:6px;font-weight:600;background:{{ m.bg }};color:{{ m.fg }}">{{ m.txt }}</span>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:9px;margin-top:13px">
+                  <span onClick="{{ c.cobrar }}" style="flex:1;padding:15px;border-radius:11px;text-align:center;font-size:15.5px;font-weight:700;cursor:pointer;background:{{ c.btnBg }};color:{{ c.btnFg }};border:{{ c.btnBd }}">{{ c.btn }}</span>
+                  <span style="padding:15px 17px;border-radius:11px;border:1px solid #cfd4da;color:#464d56;font-size:15.5px;font-weight:600">Llamar</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verFicha }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:#16191d;color:#fff;border-radius:14px;padding:18px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#aeb5bd">Saldo total</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:600;line-height:1;margin-top:5px">S/ 75.00</div>
+              <div style="font-size:13px;color:#aeb5bd;margin-top:6px">María López Chávez · 3 cargos con saldo</div>
+
+              <div style="display:flex;gap:9px;margin-top:16px">
+                <span onClick="{{ cobrarFicha }}" style="flex:1;padding:16px;border-radius:11px;background:#fff;color:#16191d;text-align:center;font-size:15.5px;font-weight:700;cursor:pointer">Cobro rápido</span>
+                <span onClick="{{ irPago }}" style="flex:1;padding:16px;border-radius:11px;border:1px solid #3a4149;color:#fff;text-align:center;font-size:15.5px;font-weight:600;cursor:pointer">Elegir cargos</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:6px;background:#e7eaee;border-radius:11px;padding:4px">
+              <sc-for list="{{ pestanas }}" as="t" hint-placeholder-count="3">
+                <span onClick="{{ t.set }}" style="flex:1;text-align:center;padding:12px 6px;border-radius:9px;cursor:pointer;font-size:13.5px;font-weight:600;background:{{ t.bg }};color:{{ t.fg }}">{{ t.txt }}</span>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ tabDeuda }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:10px">Deuda mes a mes</div>
+                  <sc-for list="{{ cargos }}" as="g" hint-placeholder-count="4">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f2f4f6">
+                      <span style="font-size:14px">{{ g.periodo }}</span>
+                      <div style="display:flex;align-items:center;gap:10px">
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:14px">{{ g.monto }}</span>
+                        <span style="font-size:12px;font-weight:600;padding:3px 8px;border-radius:5px;background:{{ g.bg }};color:{{ g.fg }}">{{ g.estado }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:12px">Datos</div>
+                  <sc-for list="{{ datos }}" as="d" hint-placeholder-count="6">
+                    <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #f2f4f6;font-size:14px">
+                      <span style="color:#6d747e">{{ d.k }}</span>
+                      <span style="text-align:right;font-weight:500">{{ d.v }}</span>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ esAdmin }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+                      <span style="flex:1;min-width:120px;padding:13px;border-radius:10px;border:1px solid #cfd4da;text-align:center;font-size:14px;font-weight:600;color:#464d56;cursor:pointer">Editar datos</span>
+                      <span onClick="{{ abrirBaja }}" style="flex:1;min-width:120px;padding:13px;border-radius:10px;border:1px solid #e3c9c6;text-align:center;font-size:14px;font-weight:600;color:#8f2c22;cursor:pointer">Dar de baja</span>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ tabPagos }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+                <div onClick="{{ irBoletas }}" style="font-size:13.5px;color:#1f3a63;font-weight:600;cursor:pointer;margin-bottom:6px">Ver todas las boletas</div>
+                <sc-for list="{{ pagos }}" as="h" hint-placeholder-count="4">
+                  <div onClick="{{ irBoleta }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #f2f4f6;cursor:pointer">
+                    <div>
+                      <div style="font-size:14.5px">{{ h.concepto }}</div>
+                      <div style="font-size:12.5px;color:#6d747e;font-family:'IBM Plex Mono',monospace">{{ h.boleta }} · {{ h.fecha }} · {{ h.metodo }}</div>
+                    </div>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600">{{ h.monto }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ tabServicios }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+                <sc-for list="{{ serviciosCliente }}" as="s" hint-placeholder-count="3">
+                  <div style="padding:11px 0;border-bottom:1px solid #f2f4f6">
+                    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#6d747e">{{ s.id }}</span>
+                      <span style="font-size:12px;font-weight:600;padding:3px 8px;border-radius:5px;background:{{ s.bg }};color:{{ s.fg }}">{{ s.tipo }}</span>
+                    </div>
+                    <div style="font-size:13.5px;color:#464d56;margin-top:5px">{{ s.nota }}</div>
+                    <div style="font-size:12.5px;color:#6d747e;margin-top:2px">{{ s.fechas }}</div>
+                  </div>
+                </sc-for>
+                <div onClick="{{ irNuevoServicio }}" style="margin-top:14px;padding:15px;border-radius:11px;border:1px dashed #1f3a63;text-align:center;font-size:14.5px;font-weight:600;color:#1f3a63;cursor:pointer">Crear servicio para este cliente</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verBoleta }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:6px;padding:18px 16px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.7;color:#16191d">
+              <div style="text-align:center;font-weight:600;font-size:14px">CABLE NOR ANDINO</div>
+              <div style="text-align:center">RUC 20601234567</div>
+              <div style="text-align:center">Trujillo · 949 118 220</div>
+              <div style="border-top:1px dashed #9aa1ab;margin:11px 0"></div>
+              <div>BOLETA 001-4483</div>
+              <div>14/09/2026 11:24</div>
+              <div>CLIENTE: M. LOPEZ CHAVEZ</div>
+              <div>DNI: 44127865</div>
+              <div style="border-top:1px dashed #9aa1ab;margin:11px 0"></div>
+              <div style="display:flex;justify-content:space-between"><span>JUL 26 SALDO</span><span>9.00</span></div>
+              <div style="display:flex;justify-content:space-between"><span>AGO 26</span><span>24.00</span></div>
+              <div style="display:flex;justify-content:space-between"><span>SET 26</span><span>24.00</span></div>
+              <div style="border-top:1px dashed #9aa1ab;margin:11px 0"></div>
+              <div style="display:flex;justify-content:space-between;font-weight:600;font-size:14px"><span>TOTAL</span><span>S/ 57.00</span></div>
+              <div style="display:flex;justify-content:space-between"><span>YAPE</span><span>57.00</span></div>
+              <div style="display:flex;justify-content:space-between"><span>PENDIENTE</span><span>18.00</span></div>
+              <div style="border-top:1px dashed #9aa1ab;margin:11px 0"></div>
+              <div style="text-align:center">GRACIAS POR SU PAGO</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span style="padding:16px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:15.5px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Imprimir en ticketera</span>
+              <div style="display:flex;gap:9px">
+                <span style="flex:1;padding:15px;border-radius:11px;border:1px solid #cfd4da;text-align:center;font-size:15px;font-weight:600;color:#464d56;cursor:pointer">Enviar por WhatsApp</span>
+                <span style="flex:1;padding:15px;border-radius:11px;border:1px solid #cfd4da;text-align:center;font-size:15px;font-weight:600;color:#464d56;cursor:pointer">Guardar PDF</span>
+              </div>
+              <sc-if value="{{ esAdmin }}" hint-placeholder-val="{{ true }}">
+                <span style="padding:15px;border-radius:11px;border:1px solid #e3c9c6;text-align:center;font-size:15px;font-weight:600;color:#8f2c22;cursor:pointer">Anular y reemitir</span>
+              </sc-if>
+            </div>
+            <div style="font-size:12.5px;color:#6d747e;text-align:center">Una boleta emitida no se edita. El formato se cambia en Ajustes.</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verServicios }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px">
+              <sc-for list="{{ filtrosST }}" as="s" hint-placeholder-count="4">
+                <span onClick="{{ s.set }}" style="font-size:13px;padding:9px 14px;border-radius:999px;white-space:nowrap;cursor:pointer;font-weight:600;flex:none;background:{{ s.bg }};color:{{ s.fg }};border:{{ s.bd }}">{{ s.txt }}</span>
+              </sc-for>
+            </div>
+            <div onClick="{{ irNuevoServicio }}" style="padding:15px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:15.5px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Nuevo servicio</div>
+            <sc-if value="{{ sinST }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:26px 16px;text-align:center;font-size:14px;color:#6d747e">No hay servicios con ese estado.</div>
+            </sc-if>
+            <sc-for list="{{ listaST }}" as="s" hint-placeholder-count="3">
+              <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:15px">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600">{{ s.id }}</span>
+                  <span style="font-size:12px;font-weight:600;padding:4px 9px;border-radius:5px;background:{{ s.tbg }};color:{{ s.tfg }}">{{ s.tipo }}</span>
+                  <div style="flex:1"></div>
+                  <span style="font-size:12px;font-weight:600;padding:4px 9px;border-radius:5px;background:{{ s.ebg }};color:{{ s.efg }}">{{ s.estado }}</span>
+                </div>
+                <div style="font-size:16px;font-weight:600;margin-top:9px">{{ s.cliente }}</div>
+                <div style="font-size:13px;color:#6d747e;margin-top:2px">{{ s.zona }} · creado {{ s.creado }} · {{ s.liquidado }}</div>
+                <div style="font-size:13.5px;color:#464d56;margin-top:9px">{{ s.nota }}</div>
+                <div style="display:flex;gap:9px;margin-top:13px">
+                  <span style="flex:1;padding:14px;border-radius:11px;border:1px solid #cfd4da;text-align:center;font-size:14.5px;font-weight:600;color:#464d56;cursor:pointer">Comentar</span>
+                  <span style="flex:1;padding:14px;border-radius:11px;background:#1f3a63;color:#fff;text-align:center;font-size:14.5px;font-weight:600;cursor:pointer">Liquidar</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verNuevoServicio }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:14px">
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:9px">Tipo de servicio</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ tiposST }}" as="t" hint-placeholder-count="4">
+                  <span onClick="{{ t.set }}" style="padding:15px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:600;background:{{ t.bg }};color:{{ t.fg }};border:{{ t.bd }}">{{ t.txt }}</span>
+                </sc-for>
+              </div>
+              <div style="font-size:12.5px;color:#6d747e;margin-top:9px">Los tipos los crea el administrador en Ajustes.</div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px">
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Cliente</div>
+                <input defaultValue="María López Chávez" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <div style="flex:1;min-width:130px">
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Creación</div>
+                  <div style="border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;font-family:'IBM Plex Mono',monospace">14/09/2026</div>
+                </div>
+                <div style="flex:1;min-width:130px">
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Programada</div>
+                  <input defaultValue="" placeholder="dd/mm/aaaa" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;font-family:'IBM Plex Mono',monospace;outline:0;color:#16191d" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Técnico</div>
+                <input defaultValue="" placeholder="Sin asignar" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:12px">Datos propios del tipo</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <sc-for list="{{ camposST }}" as="c" hint-placeholder-count="3">
+                  <div>
+                    <div style="font-size:13px;color:#464d56;margin-bottom:5px">{{ c.etiqueta }}</div>
+                    <input defaultValue="" placeholder="{{ c.ph }}" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:13px;font-size:15px;outline:0;color:#16191d" />
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Comentario</div>
+              <input defaultValue="" placeholder="Lo que reporta el cliente" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+            </div>
+
+            <div onClick="{{ atras }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Crear servicio</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verNuevoCliente }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ camposCliente }}" as="c" hint-placeholder-count="4">
+                <div>
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">{{ c.etiqueta }}</div>
+                  <input defaultValue="" placeholder="{{ c.ph }}" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+                </div>
+              </sc-for>
+            </div>
+
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:9px">Caserío</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap">
+                <sc-for list="{{ zonasAlta }}" as="z" hint-placeholder-count="4">
+                  <span onClick="{{ z.set }}" style="font-size:13.5px;padding:11px 14px;border-radius:999px;cursor:pointer;font-weight:600;background:{{ z.bg }};color:{{ z.fg }};border:{{ z.bd }}">{{ z.txt }}</span>
+                </sc-for>
+                <span style="font-size:13.5px;padding:11px 14px;border-radius:999px;border:1px dashed #1f3a63;color:#1f3a63;font-weight:600;cursor:pointer">+ Nuevo</span>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px">
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Monto base mensual</div>
+                <div style="display:flex;align-items:center;gap:8px;border:1px solid #cfd4da;border-radius:10px;padding:0 14px">
+                  <span style="font-family:'IBM Plex Mono',monospace;color:#6d747e">S/</span>
+                  <input defaultValue="30.00" style="flex:1;min-width:0;border:0;outline:0;padding:14px 0;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#16191d" />
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Fecha de facturación</div>
+                <div style="display:flex;gap:7px">
+                  <sc-for list="{{ facturacion }}" as="f" hint-placeholder-count="2">
+                    <span onClick="{{ f.set }}" style="flex:1;text-align:center;padding:14px 8px;border-radius:10px;cursor:pointer;font-size:14.5px;font-weight:600;background:{{ f.bg }};color:{{ f.fg }};border:{{ f.bd }}">{{ f.txt }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div onClick="{{ atras }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Guardar cliente</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verCaja }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="background:#16191d;color:#fff;border-radius:14px;padding:18px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#aeb5bd">Ingresos menos egresos</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:600;line-height:1;margin-top:5px">S/ 7,160</div>
+              <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-top:14px;padding-top:12px;border-top:1px solid #3a4149">
+                <span style="color:#aeb5bd">Ingresos</span><span style="font-family:'IBM Plex Mono',monospace">S/ 9,340</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-top:7px">
+                <span style="color:#aeb5bd">Egresos</span><span style="font-family:'IBM Plex Mono',monospace">S/ 2,180</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:9px">
+              <span onClick="{{ abrirEgreso }}" style="flex:1;padding:15px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:15px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Registrar egreso</span>
+              <span onClick="{{ abrirIngreso }}" style="flex:1;padding:15px;border-radius:12px;border:1px solid #cfd4da;text-align:center;font-size:15px;font-weight:600;color:#464d56;cursor:pointer">Ingreso manual</span>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:10px">Gastos reportados por cobradores</div>
+              <sc-for list="{{ reportes }}" as="r" hint-placeholder-count="2">
+                <div style="padding:11px 0;border-bottom:1px solid #f2f4f6">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:14.5px;font-weight:600">{{ r.desc }}</div>
+                      <div style="font-size:12.5px;color:#6d747e;margin-top:2px">{{ r.quien }}</div>
+                    </div>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600">{{ r.monto }}</span>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:10px">
+                    <span onClick="{{ abrirEgreso }}" style="flex:1;padding:12px;border-radius:10px;background:#1f3a63;color:#fff;text-align:center;font-size:13.5px;font-weight:600;cursor:pointer">Registrar</span>
+                    <span style="flex:1;padding:12px;border-radius:10px;border:1px solid #cfd4da;text-align:center;font-size:13.5px;font-weight:600;color:#464d56;cursor:pointer">Rechazar</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">Cobrado por método</div>
+                <span onClick="{{ irBoletas }}" style="font-size:13px;color:#1f3a63;font-weight:600;cursor:pointer">Ver boletas</span>
+              </div>
+              <sc-for list="{{ caja }}" as="k" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f2f4f6">
+                  <div>
+                    <div style="font-size:14.5px">{{ k.metodo }}</div>
+                    <div style="font-size:12.5px;color:#6d747e">{{ k.ops }}</div>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600">{{ k.monto }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:10px">Egresos del periodo</div>
+              <sc-for list="{{ egresos }}" as="e" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f2f4f6">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:14.5px">{{ e.desc }}</div>
+                    <div style="font-size:12.5px;color:#6d747e">{{ e.fecha }} · {{ e.categoria }}</div>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#8f2c22">{{ e.monto }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verAjustes }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px">
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:12px">Identidad</div>
+              <div style="display:flex;align-items:center;gap:13px;padding:14px;border-radius:11px;border:1px dashed #cfd4da;background:#f7f8fa">
+                <div style="width:44px;height:44px;border-radius:10px;background:#1f3a63;color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px;flex:none">CN</div>
+                <div style="font-size:12.5px;color:#464d56">Toca para subir el logo. Se usa en la app y en la boleta.</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+                <div>
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Nombre</div>
+                  <input defaultValue="Cable Nor Andino E.I.R.L." style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:130px">
+                    <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">RUC</div>
+                    <input defaultValue="20601234567" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;font-family:'IBM Plex Mono',monospace;outline:0;color:#16191d" />
+                  </div>
+                  <div style="flex:1;min-width:130px">
+                    <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Teléfono</div>
+                    <input defaultValue="949 118 220" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;font-family:'IBM Plex Mono',monospace;outline:0;color:#16191d" />
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:9px">Color principal</div>
+                  <div style="display:flex;gap:9px;flex-wrap:wrap">
+                    <sc-for list="{{ colores }}" as="c" hint-placeholder-count="4">
+                      <span onClick="{{ c.set }}" style="width:46px;height:46px;border-radius:12px;cursor:pointer;background:{{ c.valor }};border:{{ c.bd }}"></span>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:12px">Facturación y boleta</div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div>
+                  <div style="font-size:13px;color:#464d56;margin-bottom:7px">Fecha de facturación global</div>
+                  <div style="border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px">Día 1 de cada mes</div>
+                </div>
+                <div>
+                  <div style="font-size:13px;color:#464d56;margin-bottom:7px">Formato de boleta</div>
+                  <div style="display:flex;gap:7px">
+                    <sc-for list="{{ formatos }}" as="f" hint-placeholder-count="2">
+                      <span onClick="{{ f.set }}" style="flex:1;text-align:center;padding:14px 8px;border-radius:10px;cursor:pointer;font-size:14.5px;font-weight:600;background:{{ f.bg }};color:{{ f.fg }};border:{{ f.bd }}">{{ f.txt }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:13px;color:#464d56;margin-bottom:7px">Modo de caja</div>
+                  <div style="display:flex;gap:7px">
+                    <sc-for list="{{ modosCaja }}" as="m" hint-placeholder-count="2">
+                      <span onClick="{{ m.set }}" style="flex:1;text-align:center;padding:14px 8px;border-radius:10px;cursor:pointer;font-size:14.5px;font-weight:600;background:{{ m.bg }};color:{{ m.fg }};border:{{ m.bd }}">{{ m.txt }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:12px">Catálogos</div>
+              <sc-for list="{{ catalogos }}" as="c" hint-placeholder-count="4">
+                <div style="padding:11px 0;border-bottom:1px solid #f2f4f6">
+                  <div style="font-size:13px;color:#464d56;margin-bottom:8px">{{ c.titulo }}</div>
+                  <div style="display:flex;gap:7px;flex-wrap:wrap">
+                    <sc-for list="{{ c.items }}" as="i" hint-placeholder-count="3">
+                      <span style="font-size:13px;padding:8px 12px;border-radius:999px;border:1px solid #cfd4da;color:#464d56">{{ i }}</span>
+                    </sc-for>
+                    <span style="font-size:13px;padding:8px 12px;border-radius:999px;border:1px dashed #1f3a63;color:#1f3a63;font-weight:600;cursor:pointer">+ Nuevo</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d">Usuarios</div>
+                <span onClick="{{ irNuevoUsuario }}" style="font-size:13px;color:#1f3a63;font-weight:600;cursor:pointer">Crear usuario</span>
+              </div>
+              <sc-for list="{{ usuarios }}" as="u" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f2f4f6">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:14.5px;font-weight:600">{{ u.nombre }}</div>
+                    <div style="font-size:12.5px;color:#6d747e;margin-top:2px">{{ u.rol }} · {{ u.zonas }}</div>
+                  </div>
+                  <span style="font-size:12px;font-weight:600;padding:4px 9px;border-radius:5px;background:{{ u.bg }};color:{{ u.fg }};flex:none">{{ u.estado }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;display:flex;align-items:center;gap:13px">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14.5px;font-weight:600">Copia automática a Excel</div>
+                <div style="font-size:12.5px;color:#6d747e;margin-top:2px">Diaria 23:00 · última hoy</div>
+              </div>
+              <span style="width:48px;height:28px;border-radius:999px;background:#1f3a63;display:flex;align-items:center;justify-content:flex-end;padding:3px;flex:none">
+                <span style="width:22px;height:22px;border-radius:50%;background:#fff"></span>
+              </span>
+            </div>
+
+            <div onClick="{{ atras }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Guardar cambios</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verNuevoUsuario }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:14px">
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ camposUsuario }}" as="c" hint-placeholder-count="4">
+                <div>
+                  <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">{{ c.etiqueta }}</div>
+                  <input defaultValue="" placeholder="{{ c.ph }}" style="width:100%;border:1px solid #cfd4da;border-radius:10px;padding:14px;font-size:15.5px;outline:0;color:#16191d" />
+                </div>
+              </sc-for>
+            </div>
+
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:9px">Rol</div>
+              <div style="display:flex;gap:8px">
+                <sc-for list="{{ rolesForm }}" as="r" hint-placeholder-count="2">
+                  <span onClick="{{ r.set }}" style="flex:1;text-align:center;padding:15px 8px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:600;background:{{ r.bg }};color:{{ r.fg }};border:{{ r.bd }}">{{ r.txt }}</span>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:10px">Qué podrá hacer</div>
+              <sc-for list="{{ permisos }}" as="k" hint-placeholder-count="7">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #f2f4f6">
+                  <span style="font-size:14px;color:{{ k.color }}">{{ k.txt }}</span>
+                  <span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:5px;background:{{ k.bg }};color:{{ k.fg }};flex:none">{{ k.marca }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div onClick="{{ atras }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Crear usuario</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verPago }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:14px">
+            <div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:9px">Cargos a cubrir</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ cargosPago }}" as="g" hint-placeholder-count="3">
+                  <div onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:13px;padding:15px;border-radius:12px;cursor:pointer;border:{{ g.bd }};background:{{ g.bg }}">
+                    <span style="width:20px;height:20px;border-radius:6px;flex:none;border:{{ g.cajaBd }};background:{{ g.cajaBg }}"></span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:15.5px;font-weight:600">{{ g.periodo }}</div>
+                      <div style="font-size:12.5px;color:#6d747e;margin-top:2px">{{ g.detalle }}</div>
+                    </div>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:15.5px;font-weight:600">{{ g.monto }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:16px">
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Monto a pagar</div>
+              <div style="display:flex;align-items:center;gap:8px;border:1px solid #cfd4da;border-radius:11px;padding:0 14px">
+                <span style="font-family:'IBM Plex Mono',monospace;color:#6d747e">S/</span>
+                <input value="{{ montoPago }}" onChange="{{ onMontoPago }}" style="flex:1;min-width:0;border:0;outline:0;padding:15px 0;font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:#16191d" />
+              </div>
+              <div style="font-size:12.5px;color:#6d747e;margin-top:8px">{{ notaParcial }}</div>
+
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin:16px 0 8px">Método de pago</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+                <sc-for list="{{ metodos }}" as="p" hint-placeholder-count="4">
+                  <span onClick="{{ p.set }}" style="text-align:center;padding:14px 3px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:600;background:{{ p.bg }};color:{{ p.fg }}">{{ p.txt }}</span>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:12px;background:#fff;border:1px solid #e4e7ec">
+              <span style="font-size:13px;color:#6d747e">Boleta a emitir</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600">001-4483</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <span onClick="{{ irBoleta }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer" style-hover="background:#17304f">Registrar y emitir boleta</span>
+              <span onClick="{{ atras }}" style="padding:15px;border-radius:11px;border:1px solid #cfd4da;text-align:center;font-size:15px;font-weight:600;color:#464d56;cursor:pointer">Guardar sin imprimir</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ verBoletas }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 14px 20px;display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #cfd4da;border-radius:11px;padding:0 15px">
+              <span style="width:9px;height:9px;border:2px solid #6d747e;border-radius:50%;flex:none"></span>
+              <input value="{{ qb }}" onChange="{{ onQb }}" placeholder="Buscar por N° de boleta o cliente" style="flex:1;min-width:0;border:0;outline:0;background:transparent;padding:15px 0;font-size:16px;color:#16191d" />
+            </div>
+            <div style="font-size:12.5px;color:#6d747e">Una boleta emitida no se edita: se anula y se reemite.</div>
+            <sc-for list="{{ boletasLista }}" as="b" hint-placeholder-count="4">
+              <div onClick="{{ b.ver }}" style="background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:15px;cursor:pointer" style-hover="background:#f8f9fb">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600">{{ b.numero }}</span>
+                  <span style="font-size:12.5px;color:#6d747e">{{ b.fecha }}</span>
+                  <div style="flex:1"></div>
+                  <span style="font-size:12px;font-weight:600;padding:4px 9px;border-radius:5px;background:{{ b.bg }};color:{{ b.fg }}">{{ b.estado }}</span>
+                </div>
+                <div style="font-size:15.5px;font-weight:600;margin-top:9px">{{ b.cliente }}</div>
+                <div style="font-size:12.5px;color:#6d747e;margin-top:2px">{{ b.zona }} · {{ b.concepto }}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px">
+                  <span style="font-size:13px;color:#6d747e">{{ b.metodo }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600">{{ b.monto }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ bajaAbierta }}" hint-placeholder-val="{{ false }}">
+          <div style="position:fixed;inset:0;background:rgba(16,24,40,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:11">
+            <div style="width:100%;max-width:480px;background:#fff;border-radius:18px 18px 0 0;padding:20px 16px 24px">
+              <div style="font-size:18px;font-weight:600;margin-bottom:4px">Dar de baja a María López</div>
+              <div style="font-size:13px;color:#6d747e;margin-bottom:16px">Pasa a retirado. Sus pagos y boletas se conservan.</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:8px">Motivo</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
+                <sc-for list="{{ motivos }}" as="m" hint-placeholder-count="5">
+                  <span onClick="{{ m.set }}" style="font-size:13.5px;padding:11px 14px;border-radius:999px;cursor:pointer;font-weight:600;background:{{ m.bg }};color:{{ m.fg }};border:{{ m.bd }}">{{ m.txt }}</span>
+                </sc-for>
+              </div>
+              <div style="font-size:13px;color:#6d747e;margin-bottom:16px">Deuda pendiente al momento de la baja: S/ 75.00</div>
+              <div onClick="{{ cerrarBaja }}" style="padding:17px;border-radius:12px;background:#8f2c22;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer">Confirmar baja</div>
+              <div onClick="{{ cerrarBaja }}" style="padding:15px;text-align:center;font-size:14.5px;color:#464d56;font-weight:600;cursor:pointer">Cancelar</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hojaCobro }}" hint-placeholder-val="{{ false }}">
+          <div style="position:fixed;inset:0;background:rgba(16,24,40,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:10">
+            <div style="width:100%;max-width:480px;background:#fff;border-radius:18px 18px 0 0;padding:20px 16px 24px">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+                <span style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.08em;color:#5d646d">Cobro rápido</span>
+                <span style="font-size:14px;font-weight:600">{{ cobrandoNombre }}</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+                <sc-for list="{{ montos }}" as="m" hint-placeholder-count="3">
+                  <span onClick="{{ m.set }}" style="flex:1;min-width:104px;text-align:center;padding:15px 8px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:600;background:#fff;border:{{ m.bd }};color:{{ m.fg }}">{{ m.txt }}</span>
+                </sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+                <sc-for list="{{ metodos }}" as="p" hint-placeholder-count="4">
+                  <span onClick="{{ p.set }}" style="text-align:center;padding:14px 3px;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:600;background:{{ p.bg }};color:{{ p.fg }}">{{ p.txt }}</span>
+                </sc-for>
+              </div>
+              <div onClick="{{ emitir }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer">Registrar y emitir boleta</div>
+              <div onClick="{{ cerrarHoja }}" style="padding:15px;text-align:center;font-size:14.5px;color:#464d56;font-weight:600;cursor:pointer">Cancelar</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hojaGasto }}" hint-placeholder-val="{{ false }}">
+          <div style="position:fixed;inset:0;background:rgba(16,24,40,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:10">
+            <div style="width:100%;max-width:480px;background:#fff;border-radius:18px 18px 0 0;padding:20px 16px 24px">
+              <div style="font-size:18px;font-weight:600;margin-bottom:4px">{{ tituloGasto }}</div>
+              <div style="font-size:13px;color:#6d747e;margin-bottom:16px">{{ notaGasto }}</div>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Monto</div>
+              <div style="display:flex;align-items:center;gap:8px;border:1px solid #cfd4da;border-radius:11px;padding:0 14px;margin-bottom:13px">
+                <span style="font-family:'IBM Plex Mono',monospace;color:#6d747e">S/</span>
+                <input defaultValue="" placeholder="0.00" style="flex:1;min-width:0;border:0;outline:0;padding:15px 0;font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:#16191d" />
+              </div>
+              <sc-if value="{{ conCategoria }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:8px">Categoría</div>
+                <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px">
+                  <sc-for list="{{ categorias }}" as="k" hint-placeholder-count="4">
+                    <span onClick="{{ k.set }}" style="font-size:13.5px;padding:11px 14px;border-radius:999px;cursor:pointer;font-weight:600;background:{{ k.bg }};color:{{ k.fg }};border:{{ k.bd }}">{{ k.txt }}</span>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:#5d646d;margin-bottom:6px">Descripción</div>
+              <input defaultValue="" placeholder="{{ phGasto }}" style="width:100%;border:1px solid #cfd4da;border-radius:11px;padding:15px 14px;font-size:15.5px;outline:0;color:#16191d;margin-bottom:16px" />
+              <div onClick="{{ cerrarGasto }}" style="padding:17px;border-radius:12px;background:#1f3a63;color:#fff;text-align:center;font-size:16px;font-weight:700;cursor:pointer">{{ btnGasto }}</div>
+              <div onClick="{{ cerrarGasto }}" style="padding:15px;text-align:center;font-size:14.5px;color:#464d56;font-weight:600;cursor:pointer">Cancelar</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none">
+          <div style="width:100%;max-width:480px;background:#fff;border-top:1px solid #e4e7ec;display:flex;pointer-events:auto">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+              <div onClick="{{ t.set }}" style="flex:1;padding:13px 2px 16px;text-align:center;cursor:pointer">
+                <div style="width:22px;height:22px;margin:0 auto 5px;border-radius:7px;background:{{ t.icono }}"></div>
+                <div style="font-size:11px;font-weight:600;color:{{ t.fg }}">{{ t.txt }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:932}}">
+const CLIENTES = [
+  { nombre: "María López Chávez", direccion: "Jr. Las Palmeras 214", zona: "Santa Rosa", mensual: 24, deuda: 75, meses: "3 meses", chips: [["Jul parcial","warn"],["Ago","bad"],["Set","bad"]] },
+  { nombre: "Segundo Cruz Alva", direccion: "Av. Los Ángeles s/n", zona: "El Milagro", mensual: 30, deuda: 60, meses: "2 meses", chips: [["Ago","bad"],["Set","bad"]] },
+  { nombre: "Elena Rodríguez Paz", direccion: "Calle Bolívar 88", zona: "Laredo", mensual: 30, deuda: 30, meses: "1 mes", chips: [["Set","bad"]] },
+  { nombre: "Rosa Vega Díaz", direccion: "Pasaje San Martín 12", zona: "Santa Rosa", mensual: 30, deuda: 0, meses: "al día", chips: [["Cobrado hoy","ok"]] }
+];
+const ST = [
+  { id: "ST-0142", tipo: "Avería de señal", t: "bad", estado: "En proceso", e: "warn", cliente: "María López Chávez", zona: "Santa Rosa", creado: "08/09 09:12", liquidado: "sin liquidar", nota: "Sin señal desde la tormenta del domingo." },
+  { id: "ST-0141", tipo: "Cambio de domicilio", t: "info", estado: "Abierto", e: "mute", cliente: "Segundo Cruz Alva", zona: "El Milagro", creado: "07/09 16:40", liquidado: "sin liquidar", nota: "Se muda dos cuadras, mismo caserío." },
+  { id: "ST-0139", tipo: "Instalación nueva", t: "ok", estado: "Liquidado", e: "ok", cliente: "Rosa Vega Díaz", zona: "Santa Rosa", creado: "05/09 11:05", liquidado: "liquidado 06/09", nota: "40 m de cable, decodificador SN-884120." }
+];
+const T = { warn:{bg:"#f7f0e0",fg:"#7c5312"}, bad:{bg:"#f6eae8",fg:"#8f2c22"}, ok:{bg:"#e9efec",fg:"#1f5c45"}, info:{bg:"#eaeef5",fg:"#1f3a63"}, mute:{bg:"#ebedf0",fg:"#464d56"} };
+const soles = n => "S/ " + n.toFixed(2);
+
+class Component extends DCLogic {
+  state = {
+    sesion: false, usuario: "julio.m", rol: "admin",
+    tab: "cobranza", pila: null, hoja: false, gasto: null,
+    zona: "Todas", zonaAlta: "Santa Rosa", q: "", tab2: "deuda",
+    monto: 75, metodo: "Efectivo", cobrandoNombre: "", st: "Abiertos",
+    tipoST: "Avería de señal", rolNuevo: "Cobrador", color: "#1f3a63",
+    formato: "Ticket 80 mm", modoCaja: "Resumen", facturacion: "Global (día 1)", cat: "Mantenimiento",
+    sel: { "Julio 2026": true, "Agosto 2026": true, "Setiembre 2026": true }, montoPago: undefined, baja: false, motivo: "Se mudó de zona", qb: ""
+  };
+
+  ver(p) { return () => this.setState({ pila: p }); }
+
+  renderVals() {
+    const s = this.state;
+    const esAdmin = s.rol === "admin";
+    const p = s.pila;
+    const chip = (txt, on, set) => ({ txt, set, bg: on ? "#1f3a63" : "#ffffff", fg: on ? "#ffffff" : "#464d56", bd: on ? "1px solid #1f3a63" : "1px solid #cfd4da" });
+    const seg = (txt, on, set) => ({ txt, set, bg: on ? "#1f3a63" : "#f4f5f7", fg: on ? "#ffffff" : "#464d56", bd: on ? "1px solid #1f3a63" : "1px solid #cfd4da" });
+
+    const tabDef = esAdmin
+      ? [["cobranza","Cobranza"],["clientes","Clientes"],["servicios","Servicios"],["caja","Caja"],["ajustes","Ajustes"]]
+      : [["cobranza","Cobranza"],["clientes","Clientes"],["servicios","Servicios"],["ajustes","Perfil"]];
+
+    const titulos = {
+      ficha: ["Ficha del cliente", "Santa Rosa · activo"],
+      boleta: ["Boleta 001-4483", "Emitida hoy 11:24"],
+      nuevoCliente: ["Nuevo cliente", "El primer cargo se genera solo"],
+      nuevoServicio: ["Nuevo servicio", "Queda abierto con fecha de hoy"],
+      nuevoUsuario: ["Crear usuario", "El rol define los permisos"],
+      pago: ["Registrar pago", "María López Chávez · saldo S/ 75.00"],
+      boletas: ["Boletas", "Correlativo actual 001-4483"]
+    };
+    const baseTitulo = { cobranza: ["Cobranza", ""], clientes: ["Clientes", "412 activos · 68 con deuda"], servicios: ["Servicios técnicos", "2 abiertos"], caja: ["Caja y egresos", "01 al 14 de setiembre"], ajustes: [esAdmin ? "Ajustes" : "Perfil", esAdmin ? "Identidad, boleta, usuarios" : "Nilda R. · cobradora"] };
+    const par = p && titulos[p] ? titulos[p] : baseTitulo[s.tab];
+
+    const lista = CLIENTES
+      .filter(c => s.zona === "Todas" || c.zona === s.zona)
+      .filter(c => !s.q || c.nombre.toLowerCase().includes(s.q.toLowerCase()))
+      .map(c => ({
+        nombre: c.nombre, direccion: c.direccion, zona: c.zona, mensual: soles(c.mensual),
+        deuda: c.deuda > 0 ? soles(c.deuda) : "Al día",
+        color: c.deuda > 0 ? "#8f2c22" : "#1f5c45",
+        meses: c.meses,
+        chips: c.chips.map(([txt, t]) => ({ txt, bg: T[t].bg, fg: T[t].fg })),
+        btn: c.deuda > 0 ? "Cobrar" : "Ver ficha",
+        btnBg: c.deuda > 0 ? "#1f3a63" : "#ffffff",
+        btnFg: c.deuda > 0 ? "#ffffff" : "#464d56",
+        btnBd: c.deuda > 0 ? "1px solid #1f3a63" : "1px solid #cfd4da",
+        abrir: this.ver("ficha"),
+        cobrar: () => c.deuda > 0
+          ? this.setState({ hoja: true, monto: c.deuda, cobrandoNombre: c.nombre })
+          : this.setState({ pila: "ficha" })
+      }));
+
+    const listaST = ST.filter(x => s.st === "Todos" || (s.st === "Abiertos" ? x.estado === "Abierto" : s.st === "Liquidados" ? x.estado === "Liquidado" : x.estado === s.st));
+
+    const camposTipo = s.tipoST === "Cambio de domicilio"
+      ? [["Dirección nueva", "Calle, número y referencia"], ["Caserío destino", "Santa Rosa"], ["Costo de traslado", "S/ 0.00"]]
+      : s.tipoST === "Instalación nueva"
+      ? [["Metros de cable", "0"], ["N° de decodificador", "SN-000000"], ["Costo de instalación", "S/ 0.00"]]
+      : s.tipoST === "Retiro de equipo"
+      ? [["Equipo a retirar", "Decodificador / cable"], ["Motivo", "Baja del servicio"]]
+      : [["Síntoma reportado", "Sin señal en todos los canales"], ["Afecta a vecinos", "No"]];
+
+    const permisos = (s.rolNuevo === "Cobrador"
+      ? [["Cobrar y emitir boletas", true], ["Ver y buscar clientes", true], ["Reportar un gasto", true], ["Registrar egresos en caja", false], ["Ver saldo del negocio", false], ["Editar ajustes y tarifas", false], ["Crear usuarios", false]]
+      : [["Cobrar y emitir boletas", true], ["Ver y buscar clientes", true], ["Reportar un gasto", true], ["Registrar egresos en caja", true], ["Ver saldo del negocio", true], ["Editar ajustes y tarifas", true], ["Crear usuarios", true]]
+    ).map(([txt, ok]) => ({ txt, marca: ok ? "Sí" : "No", bg: ok ? T.ok.bg : "#f4f5f7", fg: ok ? T.ok.fg : "#6d747e", color: ok ? "#16191d" : "#6d747e" }));
+
+    const PEND = [["Julio 2026", 9], ["Agosto 2026", 24], ["Setiembre 2026", 24]];
+    const totalSel = PEND.reduce((t, g) => t + (s.sel[g[0]] ? g[1] : 0), 0);
+    const restante = totalSel - (parseFloat(s.montoPago !== undefined ? s.montoPago : totalSel) || 0);
+
+    return {
+      enLogin: !s.sesion, enApp: s.sesion,
+      usuario: s.usuario, onUsuario: e => this.setState({ usuario: e.target.value }),
+      entrar: () => this.setState({ sesion: true, rol: s.usuario.trim().toLowerCase() === "nilda.r" ? "cobrador" : "admin", tab: "cobranza", pila: null }),
+      salir: () => this.setState({ sesion: false, pila: null, hoja: false, gasto: null }),
+      cambiarRol: () => this.setState(st => ({ rol: st.rol === "admin" ? "cobrador" : "admin", tab: "cobranza", pila: null })),
+      esAdmin, esCobrador: !esAdmin,
+      titulo: par[0], subtitulo: p ? par[1] : (s.tab === "cobranza" ? (esAdmin ? "Julio M. · administrador" : "Nilda R. · cobradora") : par[1]),
+      conAtras: !!p, sinAtras: !p,
+      atras: () => this.setState({ pila: null }),
+      conBuscador: !p && (s.tab === "cobranza" || s.tab === "clientes"),
+      ph: s.tab === "clientes" ? "Nombre, DNI o caserío" : "Buscar cliente por cobrar",
+      q: s.q, onQ: e => this.setState({ q: e.target.value }),
+
+      verCobranza: !p && (s.tab === "cobranza" || s.tab === "clientes"),
+      verFicha: p === "ficha", verBoleta: p === "boleta",
+      verNuevoCliente: p === "nuevoCliente", verNuevoServicio: p === "nuevoServicio", verNuevoUsuario: p === "nuevoUsuario",
+      verPago: p === "pago", verBoletas: p === "boletas",
+      irPago: this.ver("pago"), irBoletas: this.ver("boletas"),
+      bajaAbierta: s.baja,
+      abrirBaja: () => this.setState({ baja: true }),
+      cerrarBaja: () => this.setState({ baja: false }),
+      motivos: ["Se mudó de zona", "Dejó de pagar", "Cambió de proveedor", "Mala señal", "Otro"].map(m => chip(m, s.motivo === m, () => this.setState({ motivo: m }))),
+      qb: s.qb, onQb: e => this.setState({ qb: e.target.value }),
+      boletasLista: [
+        { numero: "001-4483", fecha: "14 set. 2026", cliente: "María López Chávez", zona: "Santa Rosa", concepto: "Jul (saldo), ago, set 2026", metodo: "Yape", monto: "S/ 57.00", estado: "Emitida", bg: T.ok.bg, fg: T.ok.fg },
+        { numero: "001-4482", fecha: "14 set. 2026", cliente: "Rosa Vega Díaz", zona: "Santa Rosa", concepto: "Setiembre 2026", metodo: "Yape", monto: "S/ 30.00", estado: "Emitida", bg: T.ok.bg, fg: T.ok.fg },
+        { numero: "001-4481", fecha: "13 set. 2026", cliente: "Juan Castillo Ruiz", zona: "El Milagro", concepto: "Agosto 2026", metodo: "Efectivo", monto: "S/ 30.00", estado: "Emitida", bg: T.ok.bg, fg: T.ok.fg },
+        { numero: "001-4480", fecha: "13 set. 2026", cliente: "Elena Rodríguez Paz", zona: "Laredo", concepto: "Agosto 2026", metodo: "Efectivo", monto: "S/ 30.00", estado: "Anulada", bg: T.bad.bg, fg: T.bad.fg }
+      ].filter(b => !s.qb || b.numero.includes(s.qb) || b.cliente.toLowerCase().includes(s.qb.toLowerCase())).map(b => Object.assign({}, b, { ver: this.ver("boleta") })),
+      cargosPago: [
+        { periodo: "Julio 2026", monto: 9, detalle: "Saldo del cargo parcial" },
+        { periodo: "Agosto 2026", monto: 24, detalle: "Cargo mensual completo" },
+        { periodo: "Setiembre 2026", monto: 24, detalle: "Cargo mensual completo" }
+      ].map(g => {
+        const on = !!s.sel[g.periodo];
+        return {
+          periodo: g.periodo, monto: soles(g.monto), detalle: g.detalle,
+          bd: on ? "1px solid #1f3a63" : "1px solid #e4e7ec",
+          bg: on ? "#f6f8fc" : "#ffffff",
+          cajaBd: on ? "1px solid #1f3a63" : "1px solid #cfd4da",
+          cajaBg: on ? "#1f3a63" : "#ffffff",
+          toggle: () => this.setState(st => ({ sel: Object.assign({}, st.sel, { [g.periodo]: !st.sel[g.periodo] }), montoPago: undefined }))
+        };
+      }),
+      montoPago: s.montoPago !== undefined ? s.montoPago : totalSel.toFixed(2),
+      onMontoPago: e => this.setState({ montoPago: e.target.value }),
+      notaParcial: restante > 0.004
+        ? "Pago parcial: quedan " + soles(restante) + " en el cargo más antiguo"
+        : "Cubre por completo los cargos seleccionados",
+      verServicios: !p && s.tab === "servicios",
+      verCaja: !p && s.tab === "caja" && esAdmin,
+      verAjustes: !p && s.tab === "ajustes",
+
+      irNuevoCliente: this.ver("nuevoCliente"), irNuevoServicio: this.ver("nuevoServicio"),
+      irNuevoUsuario: this.ver("nuevoUsuario"), irBoleta: this.ver("boleta"),
+      cobrarFicha: () => this.setState({ hoja: true, monto: 75, cobrandoNombre: "María López" }),
+
+      tabs: tabDef.map(([id, txt]) => {
+        const on = !p && s.tab === id;
+        return { txt, icono: on ? "#1f3a63" : "#cfd4da", fg: on ? "#1f3a63" : "#6d747e", set: () => this.setState({ tab: id, pila: null }) };
+      }),
+      resumen: esAdmin
+        ? [{ label: "Cobrado en setiembre", valor: "S/ 9,340", color: "#16191d" }, { label: "Deuda acumulada", valor: "S/ 3,105", color: "#8f2c22" }]
+        : [{ label: "Cobrado hoy", valor: "S/ 420", color: "#16191d" }, { label: "Pendientes", valor: "17", color: "#16191d" }],
+      zonas: ["Todas", "Santa Rosa", "El Milagro", "Laredo"].map(z => chip(z === "Todas" ? "Todas las zonas" : z, s.zona === z, () => this.setState({ zona: z }))),
+      lista,
+
+      pestanas: [["deuda", "Deuda"], ["pagos", "Pagos"], ["servicios", "Servicios"]].map(([id, txt]) => {
+        const on = s.tab2 === id;
+        return { txt, bg: on ? "#ffffff" : "transparent", fg: on ? "#16191d" : "#6d747e", set: () => this.setState({ tab2: id }) };
+      }),
+      tabDeuda: s.tab2 === "deuda", tabPagos: s.tab2 === "pagos", tabServicios: s.tab2 === "servicios",
+      cargos: [
+        { periodo: "Junio 2026", monto: "S/ 24.00", estado: "Pagado", bg: T.ok.bg, fg: T.ok.fg },
+        { periodo: "Julio 2026", monto: "S/ 24.00", estado: "Parcial", bg: T.warn.bg, fg: T.warn.fg },
+        { periodo: "Agosto 2026", monto: "S/ 24.00", estado: "Pendiente", bg: T.bad.bg, fg: T.bad.fg },
+        { periodo: "Setiembre 2026", monto: "S/ 24.00", estado: "Pendiente", bg: T.bad.bg, fg: T.bad.fg }
+      ],
+      datos: [
+        { k: "DNI", v: "44127865" }, { k: "Teléfono", v: "949 118 220" },
+        { k: "Caserío", v: "Santa Rosa" }, { k: "Monto base", v: "S/ 30.00" },
+        { k: "Descuento", v: "20% hasta dic." }, { k: "Facturación", v: "Día 5 (propia)" },
+        { k: "Alta", v: "14 mar. 2023" }
+      ],
+      pagos: [
+        { concepto: "Junio 2026", boleta: "001-4470", fecha: "04/06/26", metodo: "Efectivo", monto: "S/ 24.00" },
+        { concepto: "Mayo 2026", boleta: "001-4455", fecha: "05/05/26", metodo: "Yape", monto: "S/ 24.00" },
+        { concepto: "Abril 2026", boleta: "001-4438", fecha: "03/04/26", metodo: "Efectivo", monto: "S/ 24.00" },
+        { concepto: "Marzo 2026", boleta: "001-4419", fecha: "06/03/26", metodo: "Plin", monto: "S/ 30.00" }
+      ],
+      serviciosCliente: [
+        { id: "ST-0142", tipo: "Avería de señal", bg: T.bad.bg, fg: T.bad.fg, nota: "Sin señal desde la tormenta del domingo.", fechas: "Creado 08/09/26 · sin liquidar" },
+        { id: "ST-0098", tipo: "Cambio de domicilio", bg: T.info.bg, fg: T.info.fg, nota: "Traslado dentro de Santa Rosa. Costo S/ 20.", fechas: "17/01/25 → 18/01/25" },
+        { id: "ST-0011", tipo: "Instalación nueva", bg: T.ok.bg, fg: T.ok.fg, nota: "35 m de cable, decodificador SN-441277.", fechas: "14/03/23 → 14/03/23" }
+      ],
+
+      filtrosST: ["Abiertos", "En proceso", "Liquidados", "Todos"].map(f => chip(f, s.st === f, () => this.setState({ st: f }))),
+      sinST: listaST.length === 0,
+      listaST: listaST.map(x => ({
+        id: x.id, tipo: x.tipo, tbg: T[x.t].bg, tfg: T[x.t].fg,
+        estado: x.estado, ebg: T[x.e].bg, efg: T[x.e].fg,
+        cliente: x.cliente, zona: x.zona, creado: x.creado, liquidado: x.liquidado, nota: x.nota
+      })),
+      tiposST: ["Avería de señal", "Cambio de domicilio", "Instalación nueva", "Retiro de equipo"].map(t => chip(t, s.tipoST === t, () => this.setState({ tipoST: t }))),
+      camposST: camposTipo.map(([etiqueta, ph]) => ({ etiqueta, ph })),
+
+      camposCliente: [
+        { etiqueta: "DNI", ph: "00000000" },
+        { etiqueta: "Nombre completo", ph: "Apellidos y nombres" },
+        { etiqueta: "Teléfono", ph: "9xx xxx xxx" },
+        { etiqueta: "Dirección o referencia", ph: "Calle, número, referencia" }
+      ],
+      zonasAlta: ["Santa Rosa", "El Milagro", "Laredo", "Simbal"].map(z => chip(z, s.zonaAlta === z, () => this.setState({ zonaAlta: z }))),
+      facturacion: ["Global (día 1)", "Propia"].map(f => seg(f, s.facturacion === f, () => this.setState({ facturacion: f }))),
+
+      caja: [
+        { metodo: "Efectivo", monto: "S/ 4,820", ops: "163 cobros" },
+        { metodo: "Yape", monto: "S/ 3,140", ops: "88 cobros" },
+        { metodo: "Plin", monto: "S/ 980", ops: "21 cobros" },
+        { metodo: "Transferencia", monto: "S/ 400", ops: "4 cobros" }
+      ],
+      egresos: [
+        { desc: "Cambio de cable troncal sector 3", fecha: "06 set.", categoria: "Mantenimiento", monto: "S/ 780.00" },
+        { desc: "Sueldo técnico", fecha: "05 set.", categoria: "Sueldos", monto: "S/ 900.00" },
+        { desc: "Combustible moto", fecha: "03 set.", categoria: "Combustible", monto: "S/ 120.00" },
+        { desc: "Amplificador de señal", fecha: "02 set.", categoria: "Equipos", monto: "S/ 380.00" }
+      ],
+      reportes: [
+        { desc: "Combustible moto · ruta El Milagro", quien: "Nilda R. · hoy 09:14", monto: "S/ 35.00" },
+        { desc: "Conector y cinta aislante", quien: "Marco D. · ayer 17:40", monto: "S/ 22.50" }
+      ],
+
+      colores: ["#1f3a63", "#1f5c45", "#7c3a12", "#4a2a63"].map(v => ({ valor: v, bd: s.color === v ? "3px solid #16191d" : "1px solid #cfd4da", set: () => this.setState({ color: v }) })),
+      formatos: ["Hoja A4", "Ticket 80 mm"].map(f => seg(f, s.formato === f, () => this.setState({ formato: f }))),
+      modosCaja: ["Resumen", "Apertura/cierre"].map(m => seg(m, s.modoCaja === m, () => this.setState({ modoCaja: m }))),
+      catalogos: [
+        { titulo: "Tipos de servicio técnico", items: ["Avería de señal", "Cambio de domicilio", "Instalación nueva", "Retiro de equipo"] },
+        { titulo: "Categorías de egreso", items: ["Mantenimiento", "Sueldos", "Combustible", "Equipos"] },
+        { titulo: "Tipos de servicio contratado", items: ["Cable"] },
+        { titulo: "Zonas / caseríos", items: ["Santa Rosa", "El Milagro", "Laredo", "Simbal"] }
+      ],
+      usuarios: [
+        { nombre: "Julio Mendoza", rol: "Administrador", zonas: "todas las zonas", estado: "Activo", bg: T.ok.bg, fg: T.ok.fg },
+        { nombre: "Nilda Ruiz", rol: "Cobrador", zonas: "Santa Rosa, El Milagro", estado: "Activo", bg: T.ok.bg, fg: T.ok.fg },
+        { nombre: "Marco Díaz", rol: "Cobrador", zonas: "Laredo", estado: "Suspendido", bg: T.mute.bg, fg: T.mute.fg }
+      ],
+      camposUsuario: [
+        { etiqueta: "Nombre completo", ph: "Apellidos y nombres" },
+        { etiqueta: "Usuario", ph: "nombre.apellido" },
+        { etiqueta: "Contraseña temporal", ph: "mínimo 8 caracteres" },
+        { etiqueta: "Teléfono", ph: "9xx xxx xxx" }
+      ],
+      rolesForm: ["Administrador", "Cobrador"].map(r => chip(r, s.rolNuevo === r, () => this.setState({ rolNuevo: r }))),
+      permisos,
+
+      hojaCobro: s.hoja, cobrandoNombre: s.cobrandoNombre || "María López",
+      cerrarHoja: () => this.setState({ hoja: false }),
+      emitir: () => this.setState({ hoja: false, pila: "boleta" }),
+      montos: [["Todo " + soles(s.monto > 0 ? s.monto : 75), s.monto > 0 ? s.monto : 75], ["1 mes S/ 24.00", 24], ["Otro monto", -1]].map(([txt, v]) => {
+        const on = s.monto === v;
+        return { txt, bd: on ? "2px solid #1f3a63" : "1px solid #cfd4da", fg: on ? "#1f3a63" : "#464d56", set: () => this.setState({ monto: v }) };
+      }),
+      metodos: ["Efectivo", "Yape", "Plin", "Transf."].map(m => {
+        const on = s.metodo === m;
+        return { txt: m, bg: on ? "#16191d" : "#eff1f4", fg: on ? "#ffffff" : "#464d56", set: () => this.setState({ metodo: m }) };
+      }),
+
+      hojaGasto: s.gasto !== null,
+      conCategoria: s.gasto === "egreso",
+      tituloGasto: s.gasto === "reporte" ? "Reportar un gasto" : s.gasto === "ingreso" ? "Ingreso manual" : "Nuevo egreso",
+      notaGasto: s.gasto === "reporte" ? "Queda pendiente hasta que el administrador lo apruebe." : s.gasto === "ingreso" ? "Para lo que no entra por cobranza." : "Se descuenta del saldo del periodo.",
+      phGasto: s.gasto === "ingreso" ? "Ej. instalación nueva en Santa Rosa" : "Ej. combustible de la ruta El Milagro",
+      btnGasto: s.gasto === "reporte" ? "Enviar reporte" : "Guardar movimiento",
+      abrirGasto: () => this.setState({ gasto: "reporte" }),
+      abrirEgreso: () => this.setState({ gasto: "egreso" }),
+      abrirIngreso: () => this.setState({ gasto: "ingreso" }),
+      cerrarGasto: () => this.setState({ gasto: null }),
+      categorias: ["Mantenimiento", "Sueldos", "Combustible", "Equipos"].map(k => chip(k, s.cat === k, () => this.setState({ cat: k })))
+    };
+  }
+}
+
+</script>
+</body>
+</html>
