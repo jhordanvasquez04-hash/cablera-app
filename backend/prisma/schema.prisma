@@ -60,6 +60,12 @@ model Usuario {
   email                        String            @unique
   passwordHash                 String
   rol                          Rol               @default(gestor)
+  // "Eliminar" un usuario en el panel en realidad desactiva la cuenta (bloquea el login, no borra
+  // la fila): gastos_reportados.usuarioId es ON DELETE RESTRICT (un cobrador que reportó aunque
+  // sea un gasto no se puede borrar sin violar esa restricción) y boletas/servicios_tecnicos
+  // perderían para siempre "quién lo registró" (ON DELETE SET NULL). Mismo criterio que ya usan
+  // Cliente (estadoServicio) y Empresa (estado) en este esquema: nunca se borra, se desactiva.
+  activo                       Boolean           @default(true)
   // null solo para super_admin (cuenta fuera de cualquier empresa).
   // Único campo que sigue siendo nullable tras el corte de Fase 2: solo null para
   // super_admin. Reforzado con un CHECK en SQL (ver migración) que Prisma no modela

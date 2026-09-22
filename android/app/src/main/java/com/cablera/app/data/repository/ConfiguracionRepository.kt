@@ -33,6 +33,12 @@ class ConfiguracionRepository(private val apiService: ApiService, private val ca
     suspend fun crearUsuario(request: CreateUsuarioRequest): Result<UsuarioListadoDto> =
         safeApiCall { apiService.crearUsuario(request) }
 
+    // "Eliminar" en la pantalla de Usuarios en realidad desactiva la cuenta (bloquea su login sin
+    // borrar su historial de boletas/gastos/servicios técnicos) — ver usuarios.service.ts.
+    suspend fun desactivarUsuario(id: String): Result<UsuarioListadoDto> = safeApiCall { apiService.desactivarUsuario(id) }
+
+    suspend fun activarUsuario(id: String): Result<UsuarioListadoDto> = safeApiCall { apiService.activarUsuario(id) }
+
     suspend fun listarTiposServicio(): Result<List<TipoServicioDto>> =
         cache.obtener("cat-tipos:lista", CacheTtl.CATALOGO) { safeApiCall { apiService.listarTiposServicio() } }
 

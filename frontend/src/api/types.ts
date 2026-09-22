@@ -33,6 +33,7 @@ export interface UsuarioListado {
   nombre: string;
   email: string;
   rol: Rol;
+  activo: boolean;
   createdAt: string;
 }
 

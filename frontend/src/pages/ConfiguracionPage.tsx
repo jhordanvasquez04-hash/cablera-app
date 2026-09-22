@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AppShell } from "../components/AppShell";
 import { apiClient, resolverUrlArchivo } from "../api/client";
 import { useConfig } from "../config/ConfigContext";
+import { useAuth } from "../auth/AuthContext";
 import type { Configuracion, FormatoBoleta, TipoServicio, TipoServicioTecnico, UsuarioListado } from "../api/types";
 import type { Rol } from "@cablera/shared";
 
@@ -366,6 +367,7 @@ const ROLES_ASIGNABLES: { valor: Rol; label: string }[] = [
 ];
 
 function SeccionUsuarios() {
+  const { usuario: miUsuario } = useAuth();
   const [usuarios, setUsuarios] = useState<UsuarioListado[]>([]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [nombre, setNombre] = useState("");
@@ -374,6 +376,8 @@ function SeccionUsuarios() {
   const [rol, setRol] = useState<Rol>("cobrador");
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [accionandoId, setAccionandoId] = useState<string | null>(null);
+  const [aConfirmar, setAConfirmar] = useState<UsuarioListado | null>(null);
 
   const cargar = () => apiClient.get<UsuarioListado[]>("/usuarios").then(({ data }) => setUsuarios(data));
 
@@ -399,8 +403,64 @@ function SeccionUsuarios() {
     }
   };
 
+  // "Eliminar" en este panel en realidad desactiva la cuenta (bloquea su login sin borrar su
+  // historial de boletas/gastos/servicios técnicos) — ver backend/src/usuarios/usuarios.service.ts.
+  const desactivar = async (id: string) => {
+    setAccionandoId(id);
+    setError(null);
+    try {
+      await apiClient.post(`/usuarios/${id}/desactivar`);
+      await cargar();
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "No se pudo eliminar el usuario");
+    } finally {
+      setAccionandoId(null);
+      setAConfirmar(null);
+    }
+  };
+
+  const activar = async (id: string) => {
+    setAccionandoId(id);
+    setError(null);
+    try {
+      await apiClient.post(`/usuarios/${id}/activar`);
+      await cargar();
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "No se pudo reactivar el usuario");
+    } finally {
+      setAccionandoId(null);
+    }
+  };
+
   return (
     <Tarjeta titulo="Usuarios y accesos">
+      {aConfirmar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-[9px] bg-surface p-5 shadow-lg">
+            <p className="text-sm font-semibold text-ink">¿Eliminar a {aConfirmar.nombre}?</p>
+            <p className="mt-2 text-sm text-ink-2">
+              No podrá volver a iniciar sesión. Sus boletas, pagos y servicios técnicos ya
+              registrados se conservan. Puedes reactivarla cuando quieras.
+            </p>
+            <div className="mt-4 flex justify-end gap-3">
+              <button type="button" onClick={() => setAConfirmar(null)} className="text-sm text-ink-weak underline">
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => desactivar(aConfirmar.id)}
+                disabled={accionandoId === aConfirmar.id}
+                className="rounded-[9px] bg-error px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="mb-3 text-sm text-error">{error}</p>}
+
       <div className="overflow-hidden rounded-lg border border-border-field">
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -408,6 +468,7 @@ function SeccionUsuarios() {
               <th className="px-3 py-2 font-medium">Nombre</th>
               <th className="px-3 py-2 font-medium">Correo</th>
               <th className="px-3 py-2 font-medium">Rol</th>
+              <th className="px-3 py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody>
@@ -415,7 +476,23 @@ function SeccionUsuarios() {
               <tr key={usuario.id} className="border-b border-divider last:border-0 hover:bg-row-hover">
                 <td className="px-3 py-2 text-ink">{usuario.nombre}</td>
                 <td className="px-3 py-2 text-ink-2">{usuario.email}</td>
-                <td className="px-3 py-2 capitalize text-ink-2">{usuario.rol === "gestor" ? "administrador" : usuario.rol}</td>
+                <td className="px-3 py-2 capitalize text-ink-2">
+                  {usuario.activo ? (usuario.rol === "gestor" ? "administrador" : usuario.rol) : "inactivo"}
+                </td>
+                <td className="px-3 py-2 text-right">
+                  {accionandoId === usuario.id ? (
+                    <span className="text-xs text-ink-weak">…</span>
+                  ) : !usuario.activo ? (
+                    <button type="button" onClick={() => activar(usuario.id)} className="text-sm text-primary underline">
+                      Reactivar
+                    </button>
+                  ) : usuario.id !== miUsuario?.id ? (
+                    // Nunca te puedes eliminar a ti mismo: te dejaría sin poder volver a entrar.
+                    <button type="button" onClick={() => setAConfirmar(usuario)} className="text-sm text-error underline">
+                      Eliminar
+                    </button>
+                  ) : null}
+                </td>
               </tr>
             ))}
           </tbody>

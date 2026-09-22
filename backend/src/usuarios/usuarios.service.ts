@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
 import { TenantPrismaService } from "../prisma/tenant-prisma.service";
@@ -24,11 +24,12 @@ export class UsuariosService {
 
   // Nunca se listan super_admin: esa cuenta es del panel proveedor externo, no de esta app.
   // Al usar tenantPrisma, además queda automáticamente acotado a la empresa del que llama.
+  // Incluye a los desactivados (para poder reactivarlos): el frontend los distingue por `activo`.
   listar() {
     return this.tenantPrisma.client.usuario.findMany({
       where: { rol: { in: ["gestor", "cobrador"] } },
-      select: { id: true, nombre: true, email: true, rol: true, createdAt: true },
-      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true, email: true, rol: true, activo: true, createdAt: true },
+      orderBy: [{ activo: "desc" }, { nombre: "asc" }],
     });
   }
 
@@ -45,5 +46,49 @@ export class UsuariosService {
 
     const { passwordHash: _omitido, ...usuarioSinPassword } = usuario;
     return usuarioSinPassword;
+  }
+
+  private async obtenerUsuarioDeLaEmpresa(id: string) {
+    const usuario = await this.tenantPrisma.client.usuario.findFirst({ where: { id, rol: { in: ["gestor", "cobrador"] } } });
+    if (!usuario) {
+      throw new NotFoundException("Usuario no encontrado");
+    }
+    return usuario;
+  }
+
+  /**
+   * "Eliminar" = desactivar (ver el comentario en schema.prisma sobre `Usuario.activo`): bloquea
+   * el login de esa cuenta sin borrar su historial de boletas/gastos/servicios técnicos.
+   */
+  async desactivar(id: string, quienLlamaId: string) {
+    const usuario = await this.obtenerUsuarioDeLaEmpresa(id);
+
+    if (usuario.id === quienLlamaId) {
+      throw new BadRequestException("No puedes desactivar tu propia cuenta");
+    }
+
+    if (usuario.rol === "gestor") {
+      const otrosGestoresActivos = await this.tenantPrisma.client.usuario.count({
+        where: { rol: "gestor", activo: true, id: { not: id } },
+      });
+      if (otrosGestoresActivos === 0) {
+        throw new BadRequestException("Debe quedar al menos un gestor activo en la empresa");
+      }
+    }
+
+    const { passwordHash: _omitido, ...resultado } = await this.tenantPrisma.client.usuario.update({
+      where: { id },
+      data: { activo: false },
+    });
+    return resultado;
+  }
+
+  async activar(id: string) {
+    await this.obtenerUsuarioDeLaEmpresa(id);
+    const { passwordHash: _omitido, ...resultado } = await this.tenantPrisma.client.usuario.update({
+      where: { id },
+      data: { activo: true },
+    });
+    return resultado;
   }
 }

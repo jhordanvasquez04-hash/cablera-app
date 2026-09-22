@@ -22,7 +22,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +33,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -200,8 +203,11 @@ fun ConfiguracionScreen(
                     )
                 }
                 item {
+                    val session by container.authRepository.session.collectAsStateWithLifecycle(initialValue = null)
                     SeccionUsuarios(
                         usuarios = uiState.usuarios,
+                        miUsuarioId = session?.usuario?.id,
+                        usuarioAccionandoId = uiState.usuarioAccionandoId,
                         mostrarForm = uiState.mostrarFormUsuario,
                         nombre = uiState.nuevoNombre,
                         email = uiState.nuevoEmail,
@@ -215,6 +221,8 @@ fun ConfiguracionScreen(
                         onPasswordChange = viewModel::onNuevoPasswordChange,
                         onRolChange = viewModel::onNuevoRolChange,
                         onCrear = viewModel::crearUsuario,
+                        onDesactivar = viewModel::desactivarUsuario,
+                        onActivar = viewModel::activarUsuario,
                     )
                 }
                 item {
@@ -438,6 +446,8 @@ private fun SeccionBoleta(
 @Composable
 private fun SeccionUsuarios(
     usuarios: List<UsuarioListadoDto>,
+    miUsuarioId: String?,
+    usuarioAccionandoId: String?,
     mostrarForm: Boolean,
     nombre: String,
     email: String,
@@ -451,7 +461,23 @@ private fun SeccionUsuarios(
     onPasswordChange: (String) -> Unit,
     onRolChange: (String) -> Unit,
     onCrear: () -> Unit,
+    onDesactivar: (String) -> Unit,
+    onActivar: (String) -> Unit,
 ) {
+    // Confirmación antes de desactivar: bloquea el login de esa cuenta, no es un cambio trivial.
+    var usuarioAConfirmar by remember { mutableStateOf<UsuarioListadoDto?>(null) }
+    usuarioAConfirmar?.let { usuario ->
+        AlertDialog(
+            onDismissRequest = { usuarioAConfirmar = null },
+            title = { Text("¿Eliminar a ${usuario.nombre}?") },
+            text = { Text("No podrá volver a iniciar sesión. Sus boletas, pagos y servicios técnicos ya registrados se conservan. Puedes reactivarla cuando quieras.") },
+            confirmButton = {
+                TextButton(onClick = { onDesactivar(usuario.id); usuarioAConfirmar = null }) { Text("Eliminar") }
+            },
+            dismissButton = { TextButton(onClick = { usuarioAConfirmar = null }) { Text("Cancelar") } },
+        )
+    }
+
     Tarjeta(titulo = "Usuarios y accesos") {
         if (usuarios.isEmpty()) {
             EmptyState(mensaje = "Aún no hay cobradores registrados.", icon = Icons.Filled.Person)
@@ -466,14 +492,32 @@ private fun SeccionUsuarios(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(usuario.nombre, style = MaterialTheme.typography.bodyLarge)
                         Text(usuario.email, style = MaterialTheme.typography.labelLarge)
                     }
-                    EstadoChip(
-                        texto = if (usuario.rol == Roles.GESTOR) "administrador" else usuario.rol,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (!usuario.activo) {
+                            EstadoChip(texto = "inactivo", color = MaterialTheme.colorScheme.error)
+                        } else {
+                            EstadoChip(
+                                texto = if (usuario.rol == Roles.GESTOR) "administrador" else usuario.rol,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        if (usuarioAccionandoId == usuario.id) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else if (usuario.activo) {
+                            // Nunca te puedes eliminar a ti mismo: te dejaría sin poder volver a entrar.
+                            if (usuario.id != miUsuarioId) {
+                                IconButton(onClick = { usuarioAConfirmar = usuario }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Eliminar a ${usuario.nombre}")
+                                }
+                            }
+                        } else {
+                            TextButton(onClick = { onActivar(usuario.id) }) { Text("Reactivar") }
+                        }
+                    }
                 }
             }
         }

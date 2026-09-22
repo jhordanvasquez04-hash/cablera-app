@@ -33,6 +33,10 @@ export class AuthService {
       throw new UnauthorizedException("Esta empresa está suspendida. Contacta al administrador.");
     }
 
+    if (!usuario.activo) {
+      throw new UnauthorizedException("Esta cuenta fue desactivada. Contacta a tu gestor.");
+    }
+
     this.throttle.registrarExito(ip, email);
     const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol, empresaId: usuario.empresaId };
 

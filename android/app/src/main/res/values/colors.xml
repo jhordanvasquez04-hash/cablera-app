@@ -3,4 +3,8 @@
     <!-- Mismos defaults de Configuracion.colorPrimario / colorSecundario en backend/prisma/schema.prisma -->
     <color name="cablera_primary">#2563EB</color>
     <color name="cablera_secondary">#1E293B</color>
+
+    <!-- Fondo del icono adaptativo: tomado del "glow" claro del propio logo_silueta_app, para que
+         se funda sin costura visible con el primer plano al recortarlo el lanzador (círculo, squircle, etc). -->
+    <color name="ic_launcher_background">#F3F4F3</color>
 </resources>

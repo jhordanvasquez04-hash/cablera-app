@@ -47,6 +47,8 @@ data class ConfiguracionUiState(
     val nuevoRol: String = Roles.COBRADOR,
     val creandoUsuario: Boolean = false,
     val errorUsuario: String? = null,
+    /** id del usuario cuya desactivación/activación está en curso (para el spinner de esa fila). */
+    val usuarioAccionandoId: String? = null,
     val tiposServicio: List<TipoServicioDto> = emptyList(),
     val mostrarNuevoTipo: Boolean = false,
     val nuevoTipoNombre: String = "",
@@ -212,6 +214,35 @@ class ConfiguracionViewModel(
                 }
                 .onFailure { e ->
                     _uiState.value = _uiState.value.copy(creandoUsuario = false, errorUsuario = e.message ?: "No se pudo crear el usuario")
+                }
+        }
+    }
+
+    /** "Eliminar" en la pantalla: desactiva la cuenta (bloquea su login, conserva su historial). */
+    fun desactivarUsuario(id: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(usuarioAccionandoId = id, errorUsuario = null)
+            configuracionRepository.desactivarUsuario(id)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(usuarioAccionandoId = null)
+                    cargarUsuarios()
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(usuarioAccionandoId = null, errorUsuario = e.message ?: "No se pudo desactivar el usuario")
+                }
+        }
+    }
+
+    fun activarUsuario(id: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(usuarioAccionandoId = id, errorUsuario = null)
+            configuracionRepository.activarUsuario(id)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(usuarioAccionandoId = null)
+                    cargarUsuarios()
+                }
+                .onFailure { e ->
+                    _uiState.value = _uiState.value.copy(usuarioAccionandoId = null, errorUsuario = e.message ?: "No se pudo activar el usuario")
                 }
         }
     }

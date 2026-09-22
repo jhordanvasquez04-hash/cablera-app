@@ -164,6 +164,12 @@ interface ApiService {
     @POST("usuarios")
     suspend fun crearUsuario(@Body request: CreateUsuarioRequest): UsuarioListadoDto
 
+    @POST("usuarios/{id}/desactivar")
+    suspend fun desactivarUsuario(@Path("id") id: String): UsuarioListadoDto
+
+    @POST("usuarios/{id}/activar")
+    suspend fun activarUsuario(@Path("id") id: String): UsuarioListadoDto
+
     @GET("tipos-servicio")
     suspend fun listarTiposServicio(): List<TipoServicioDto>
 
