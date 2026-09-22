@@ -3,6 +3,7 @@ import { Cron } from "@nestjs/schedule";
 import { PrismaService } from "../prisma/prisma.service";
 import { ConfiguracionService } from "../configuracion/configuracion.service";
 import { DescuentosService } from "../descuentos/descuentos.service";
+import { diaEnLima } from "../common/fecha-lima.util";
 
 export interface ResumenGeneracionCargos {
   fecha: string;
@@ -16,20 +17,6 @@ interface ResumenPorEmpresa {
   fecha: string;
   serviciosEvaluados: number;
   cargosCreados: number;
-}
-
-// Perú no usa horario de verano: el offset es siempre UTC-5, todo el año.
-const LIMA_OFFSET_HOURS = 5;
-
-/** Año/mes/día de [fecha] en hora de Lima, no en la del proceso de Node — así el corte de "hoy" (y
- * por lo tanto de qué clientes se facturan) no cambia si esto corre en un servidor con otro huso. */
-function diaEnLima(fecha: Date): { anio: number; mes: number; dia: number } {
-  const limaShifted = new Date(fecha.getTime() - LIMA_OFFSET_HOURS * 60 * 60 * 1000);
-  return {
-    anio: limaShifted.getUTCFullYear(),
-    mes: limaShifted.getUTCMonth() + 1,
-    dia: limaShifted.getUTCDate(),
-  };
 }
 
 @Injectable()

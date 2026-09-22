@@ -1,4 +1,5 @@
 import type { EstadoServicio, PrismaClient } from "@prisma/client";
+import { diaEnLima } from "../common/fecha-lima.util";
 
 export interface ServicioImportado {
   tipoServicio: string;
@@ -34,6 +35,18 @@ export interface ResumenImportacionClientes {
   tiposCreados: number;
   clientesCreados: number;
   clientesOmitidos: number;
+  cargosCreados: number;
+}
+
+export interface OpcionesImportacion {
+  /**
+   * Además de crear al cliente, le genera de una vez el cargo del mes actual por cada servicio
+   * ACTIVO (el mismo cargo que el cron diario crearía en su día de facturación) — para que el
+   * cliente aparezca con deuda pendiente desde el primer momento, en vez de con S/ 0 hasta que le
+   * toque su próximo ciclo de facturación. Solo aplica a clientes nuevos en esta corrida: uno ya
+   * existente (se omite) no recibe un cargo adicional.
+   */
+  generarCargoInicial?: boolean;
 }
 
 // El archivo (respaldo de otro sistema) guarda las fechas en UTC pero sin sufijo de zona horaria.
@@ -56,8 +69,17 @@ export async function importarClientes(
   prisma: PrismaClient,
   empresaId: string,
   datos: DatosImportacion,
+  opciones: OpcionesImportacion = {},
 ): Promise<ResumenImportacionClientes> {
-  const resumen: ResumenImportacionClientes = { zonasCreadas: 0, tiposCreados: 0, clientesCreados: 0, clientesOmitidos: 0 };
+  const resumen: ResumenImportacionClientes = {
+    zonasCreadas: 0,
+    tiposCreados: 0,
+    clientesCreados: 0,
+    clientesOmitidos: 0,
+    cargosCreados: 0,
+  };
+  // Mismo mes para todos los cargos iniciales de esta corrida, calculado una sola vez.
+  const { anio: anioActual, mes: mesActual } = diaEnLima(new Date());
 
   await prisma.$transaction(
     async (tx) => {
@@ -102,7 +124,7 @@ export async function importarClientes(
         const zonaId = zonaIdPorCodigo.get(c.zonaCodigo);
         if (!zonaId) throw new Error(`Cliente ${c.numeroContrato}: la zona "${c.zonaCodigo}" no está en el archivo de datos.`);
 
-        await tx.cliente.create({
+        const clienteCreado = await tx.cliente.create({
           data: {
             numeroContrato: c.numeroContrato,
             dni: c.dni,
@@ -128,8 +150,28 @@ export async function importarClientes(
               })),
             },
           },
+          include: { serviciosContratados: true },
         });
         resumen.clientesCreados++;
+
+        if (opciones.generarCargoInicial) {
+          // Un servicio ya suspendido o dado de baja al momento de importar no debería empezar
+          // a deberle nada a nadie: solo los que llegan activos.
+          for (const servicio of clienteCreado.serviciosContratados.filter((s) => s.estado === "activo")) {
+            await tx.cargoMensual.create({
+              data: {
+                clienteId: clienteCreado.id,
+                servicioContratadoId: servicio.id,
+                anio: anioActual,
+                mes: mesActual,
+                montoCorrespondiente: servicio.montoBase,
+                estado: "pendiente",
+                empresaId,
+              },
+            });
+            resumen.cargosCreados++;
+          }
+        }
       }
     },
     { timeout: 120_000 },

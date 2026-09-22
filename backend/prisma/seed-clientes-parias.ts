@@ -16,8 +16,11 @@
  * Archivo de datos: `prisma/seed-data/parias-clientes.json`, o el que indique `SEED_CLIENTES_ARCHIVO`.
  *
  * Es idempotente: se puede correr varias veces. Un cliente cuyo `numeroContrato` ya existe en la
- * cuenta se omite (nunca se sobrescribe lo que ya se editó a mano). No genera cargos, boletas ni
- * pagos: los cargos se crean hacia adelante con el cron diario de facturación.
+ * cuenta se omite (nunca se sobrescribe lo que ya se editó a mano).
+ *
+ * Por defecto no genera deuda: los cargos se crean hacia adelante con el cron diario de
+ * facturación. Con `SEED_CLIENTES_CARGO_INICIAL=true`, a cada cliente NUEVO (con servicios
+ * activos) se le crea de una vez el cargo del mes en curso.
  */
 import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "node:fs";
@@ -54,11 +57,13 @@ async function main() {
   const empresa = await resolverEmpresaDestino();
   console.log(`Cuenta destino: ${empresa.nombre} (${empresa.slug})`);
 
-  const resumen = await importarClientes(prisma, empresa.id, datos);
+  const generarCargoInicial = process.env.SEED_CLIENTES_CARGO_INICIAL === "true";
+  const resumen = await importarClientes(prisma, empresa.id, datos, { generarCargoInicial });
 
   console.log(
     `Listo: ${resumen.clientesCreados} cliente(s) creados, ${resumen.clientesOmitidos} ya existían, ` +
-      `${resumen.zonasCreadas} zona(s) y ${resumen.tiposCreados} tipo(s) de servicio nuevos.`,
+      `${resumen.zonasCreadas} zona(s) y ${resumen.tiposCreados} tipo(s) de servicio nuevos` +
+      (generarCargoInicial ? `, ${resumen.cargosCreados} cargo(s) inicial(es) generados.` : "."),
   );
 }
 

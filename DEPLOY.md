@@ -36,19 +36,33 @@ En producción el seed **se niega a correr** si faltan `SEED_GESTOR_PASSWORD`,
 `SEED_COBRADOR_PASSWORD` o `SEED_SUPERADMIN_PASSWORD`, o si tienen menos de 10 caracteres o son
 `cambiar123`.
 
-Para cargar los clientes de PARIAS (semilla), copia el archivo de datos al volumen `backups`
-(la imagen no lo incluye a propósito) y córrela indicando su ruta:
+Para cargar clientes desde el histórico (zonas + clientes + servicios contratados, formato de
+`prisma/seed-data/*.json`), dos formas — no necesitas SSH ni terminal del servidor:
 
+**Por HTTP** (recomendado; con acceso solo al panel de Dokploy), como `super_admin`:
+```sh
+curl -X POST "https://api.tu-dominio.com/admin/empresas/<empresaId>/importar-clientes?generarCargoInicial=true" \
+  -H "Authorization: Bearer <token de super_admin>" \
+  -F "file=@backend/prisma/seed-data/parias-clientes.json"
+```
+`?generarCargoInicial=true` crea de una vez el cargo del mes en curso a cada cliente nuevo con
+servicios activos, para que no aparezca con deuda S/ 0 hasta su próximo ciclo de facturación.
+Omite el parámetro (o pon `=false`) si prefieres que la deuda se genere sola, cliente por cliente,
+según su día de facturación real, con el cron diario.
+
+**Por terminal** (si tienes acceso a ella), copia el archivo al volumen `backups` y corre:
 ```sh
 # En tu PC:
 docker cp backend/prisma/seed-data/parias-clientes.json <contenedor-backend>:/app/backend/backups/
 # Dentro del contenedor backend:
-SEED_CLIENTES_ARCHIVO=backups/parias-clientes.json ts-node prisma/seed-clientes-parias.ts
+SEED_CLIENTES_ARCHIVO=backups/parias-clientes.json SEED_CLIENTES_CARGO_INICIAL=true \
+  ts-node prisma/seed-clientes-parias.ts
 # Cuando termine, borra el archivo (contiene datos personales):
 rm backups/parias-clientes.json
 ```
 
-Es idempotente: se puede repetir sin duplicar clientes.
+Ambas formas son idempotentes: un cliente cuyo `numeroContrato` ya existe se omite por completo
+(no se le agrega un cargo adicional en una segunda corrida).
 
 ## 3. Verificación
 

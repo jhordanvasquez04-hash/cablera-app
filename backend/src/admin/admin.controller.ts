@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AdminService } from "./admin.service";
 import { CreateEmpresaDto } from "./dto/create-empresa.dto";
@@ -37,10 +37,17 @@ export class AdminController {
    * Carga masiva de zonas/clientes/servicios para una empresa, a partir del JSON de histórico
    * (ver `importar-clientes.ts`). Pensado para el onboarding de una empresa nueva desde el panel
    * proveedor, sin necesitar acceso a una terminal del servidor.
+   *
+   * `?generarCargoInicial=true`: a cada cliente nuevo (con servicios activos) se le crea de una
+   * vez el cargo del mes en curso, para que no aparezca con deuda S/ 0 hasta su próximo ciclo.
    */
   @Post("empresas/:id/importar-clientes")
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: VEINTE_MB } }))
-  async importarClientes(@Param("id") id: string, @UploadedFile() file: Express.Multer.File) {
+  async importarClientes(
+    @Param("id") id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Query("generarCargoInicial") generarCargoInicial?: string,
+  ) {
     if (!file) {
       throw new BadRequestException("Debes adjuntar el archivo JSON de clientes");
     }
@@ -53,6 +60,8 @@ export class AdminController {
     if (!Array.isArray(datos?.zonas) || !Array.isArray(datos?.clientes)) {
       throw new BadRequestException('El archivo debe tener la forma { "zonas": [...], "clientes": [...] }');
     }
-    return this.adminService.importarClientes(id, datos);
+    return this.adminService.importarClientes(id, datos, {
+      generarCargoInicial: generarCargoInicial === "true" || generarCargoInicial === "1",
+    });
   }
 }

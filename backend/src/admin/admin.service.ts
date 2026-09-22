@@ -2,7 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from "@nestjs/common
 import * as bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
 import type { CreateEmpresaDto } from "./dto/create-empresa.dto";
-import { importarClientes, type DatosImportacion } from "./importar-clientes";
+import { importarClientes, type DatosImportacion, type OpcionesImportacion } from "./importar-clientes";
 
 // Único módulo (junto a los cron) con permiso explícito para usar el PrismaService crudo:
 // el panel proveedor opera A PROPÓSITO cruzando empresas (listarlas, crearlas, suspenderlas).
@@ -86,8 +86,8 @@ export class AdminService {
     return this.prisma.empresa.update({ where: { id }, data: { estado: "suspendida" } });
   }
 
-  async importarClientes(id: string, datos: DatosImportacion) {
+  async importarClientes(id: string, datos: DatosImportacion, opciones?: OpcionesImportacion) {
     await this.obtenerEmpresa(id);
-    return importarClientes(this.prisma, id, datos);
+    return importarClientes(this.prisma, id, datos, opciones);
   }
 }
