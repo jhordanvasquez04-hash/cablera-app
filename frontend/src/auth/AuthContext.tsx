@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { apiClient } from "../api/client";
+import { resetTheme } from "../config/ConfigContext";
 import type { LoginResponse, Usuario } from "../api/types";
 
 interface AuthContextValue {
@@ -30,6 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("usuario");
     setUsuario(null);
+    // Sin esto, la pantalla de login que aparece justo después seguiría pintada con los colores
+    // de la empresa que acaba de cerrar sesión, en vez de la marca neutra de CableGestion.
+    resetTheme();
   };
 
   const value = useMemo(() => ({ usuario, login, logout }), [usuario]);

@@ -91,25 +91,35 @@ class AppContainer(context: Context) {
         return BuildConfig.API_BASE_URL.trimEnd('/') + ruta
     }
 
-    // Compartido por CableraTheme (colores de marca) y la pantalla de login (nombre/logo).
-    // `/configuracion` es pública, así que se puede cargar antes de iniciar sesión. La pantalla de
-    // Ajustes actualiza este mismo estado al guardar cambios, para que el tema se repinte al toque.
+    // Colores/logo de la EMPRESA de quien tiene sesión iniciada — usados por CableraTheme y por la
+    // pantalla de Ajustes. `GET /configuracion` requiere sesión a propósito: antes de iniciar sesión
+    // no hay forma de saber de qué empresa es la persona (varias empresas comparten la misma app),
+    // así que [LoginScreen] nunca lee este estado y siempre se ve con la marca neutra de CableGestion
+    // (los colores por defecto de [CableraTheme] cuando `configuracion` es null). Ajustes actualiza
+    // este mismo estado al guardar cambios, para que el tema se repinte al toque.
     val configuracionState: MutableStateFlow<ConfiguracionDto?> = MutableStateFlow(null)
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
-        // Lectura pequeña y local: la marca guardada se aplica antes del primer frame, sin parpadeo de tema.
+        // Lectura pequeña y local: si ya había sesión, la marca guardada se aplica antes del primer
+        // frame (sin parpadeo); si no la había, esto no devuelve nada (la caché se limpia al cerrar
+        // sesión) y el primer frame ya sale con la marca neutra, correctamente.
         configuracionState.value = runBlocking { configuracionRepository.enCache() }
         appScope.launch {
             configuracionRepository.obtener().onSuccess { configuracionState.value = it }
         }
-        // Cualquier cierre de sesión (manual o por 401 del interceptor) descarta lo guardado del usuario.
-        // Solo al pasar de "con sesión" a "sin sesión": en un arranque sin sesión no hay nada que borrar
-        // y así se conserva la marca guardada para la pantalla de login.
         appScope.launch {
             var teniaSesion = false
             sessionManager.session.collect { sesion ->
-                if (sesion == null && teniaSesion) apiCache.limpiar()
+                if (sesion == null && teniaSesion) {
+                    // Cierre de sesión (manual o por 401 del interceptor): descarta lo guardado del usuario.
+                    apiCache.limpiar()
+                    configuracionState.value = null
+                } else if (sesion != null && !teniaSesion) {
+                    // Login recién ocurrido: hasta este momento la app no sabía de qué empresa era esta
+                    // persona, así que carga su marca real para el resto de la sesión.
+                    configuracionRepository.obtener().onSuccess { configuracionState.value = it }
+                }
                 teniaSesion = sesion != null
             }
         }

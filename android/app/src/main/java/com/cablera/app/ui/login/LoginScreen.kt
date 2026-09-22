@@ -16,7 +16,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,7 +44,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cablera.app.LocalAppContainer
 import com.cablera.app.ui.common.LambdaViewModelFactory
-import com.cablera.app.ui.common.RemoteImage
 
 private val LoginCardShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
@@ -59,12 +57,7 @@ fun LoginScreen(
     },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val container = LocalAppContainer.current
-    val configuracion by container.configuracionState.collectAsStateWithLifecycle()
     var mostrarPassword by remember { mutableStateOf(false) }
-
-    val nombreEmpresa = configuracion?.nombreEmpresa?.takeIf { it.isNotBlank() } ?: "Cablera"
-    val logoUrl = container.resolverUrlArchivo(configuracion?.logoUrl)
 
     Scaffold { paddingValues ->
         Column(
@@ -81,6 +74,9 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
+                // Marca fija de CableGestion (el producto), nunca la de una empresa: antes de iniciar
+                // sesión no hay forma de saber a cuál de las empresas que usan esta misma app
+                // pertenece la persona (ver el comentario sobre configuracionState en AppContainer).
                 Box(
                     modifier = Modifier
                         .size(52.dp)
@@ -88,17 +84,14 @@ fun LoginScreen(
                         .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    RemoteImage(
-                        url = logoUrl,
-                        contentDescription = nombreEmpresa,
-                        modifier = Modifier.size(52.dp).clip(CircleShape),
-                        placeholder = {
-                            Icon(Icons.Filled.Wifi, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(26.dp))
-                        },
+                    Text(
+                        text = "CG",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
                 Text(
-                    text = nombreEmpresa,
+                    text = "CableGestion",
                     style = MaterialTheme.typography.displayLarge,
                     color = MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center,

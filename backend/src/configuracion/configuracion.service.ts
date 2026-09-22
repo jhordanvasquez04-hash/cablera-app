@@ -18,31 +18,6 @@ export class ConfiguracionService {
     });
   }
 
-  /**
-   * Para la ruta pública `GET /configuracion` (branding de la pantalla de login, antes de
-   * autenticar — no hay empresaId todavía). Devuelve la configuración de la primera
-   * empresa creada. Con un solo tenant hoy esto es correcto; el día que haya más de una
-   * empresa real, la pantalla de login necesitará alguna forma de elegir/identificar el
-   * tenant (subdominio, selector, etc.) antes de poder resolver esto correctamente —
-   * limitación conocida, no resuelta en este retrofit.
-   */
-  async getConfiguracionPublica() {
-    // Solo lo necesario para pintar el login; el resto (RUC, contacto, facturación) requiere sesión.
-    return this.prisma.configuracion.findFirstOrThrow({
-      orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        nombreEmpresa: true,
-        logoUrl: true,
-        colorPrimario: true,
-        colorSecundario: true,
-        fechaFacturacionGlobal: true,
-        formatoBoletaDefault: true,
-        modoCaja: true,
-      },
-    });
-  }
-
   async updateConfiguracion(empresaId: string, dto: UpdateConfiguracionDto) {
     await this.getConfiguracion(empresaId);
     return this.prisma.configuracion.update({

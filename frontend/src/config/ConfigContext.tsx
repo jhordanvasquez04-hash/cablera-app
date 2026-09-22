@@ -15,14 +15,32 @@ function applyTheme(configuracion: Configuracion) {
   document.documentElement.style.setProperty("--color-secondary", configuracion.colorSecundario);
 }
 
+/**
+ * Vuelve a los colores por defecto de CableGestion (los que ya trae :root en index.css). Se usa al
+ * cerrar sesión y en la pantalla de login: antes de autenticar no hay forma de saber de qué empresa
+ * es la persona (varias empresas comparten el mismo login), así que ahí nunca se pinta la marca de
+ * ninguna empresa — solo la del producto. Ver LoginPage.tsx.
+ */
+export function resetTheme() {
+  document.documentElement.style.removeProperty("--color-primary");
+  document.documentElement.style.removeProperty("--color-secondary");
+}
+
 export function ConfigProvider({ children }: { children: ReactNode }) {
   const [configuracion, setConfiguracion] = useState<Configuracion | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Requiere sesión (ver backend/src/configuracion/configuracion.controller.ts). Antes de que haya
+  // una, esto falla con 401 — es esperado, se ignora y la app se queda con los colores por defecto.
   const refresh = async () => {
-    const { data } = await apiClient.get<Configuracion>("/configuracion");
-    setConfiguracion(data);
-    applyTheme(data);
+    try {
+      const { data } = await apiClient.get<Configuracion>("/configuracion");
+      setConfiguracion(data);
+      applyTheme(data);
+    } catch {
+      setConfiguracion(null);
+      resetTheme();
+    }
   };
 
   useEffect(() => {

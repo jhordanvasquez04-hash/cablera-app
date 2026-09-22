@@ -1,12 +1,10 @@
-import { BadRequestException, Body, Controller, Delete, Get, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Patch, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { writeFile } from "fs/promises";
 import { join } from "path";
 import { ConfiguracionService } from "./configuracion.service";
 import { UpdateConfiguracionDto } from "./dto/update-configuracion.dto";
-import { Public } from "../auth/decorators/public.decorator";
 import { Roles } from "../auth/decorators/roles.decorator";
-import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
 import { CurrentUser, type AuthenticatedUser } from "../auth/decorators/current-user.decorator";
 
 // La extensión sale del tipo validado, nunca del nombre que manda el cliente (un "logo.html"
@@ -40,17 +38,13 @@ const UN_MB = 1_000_000;
 export class ConfiguracionController {
   constructor(private configuracionService: ConfiguracionService) {}
 
-  // Pública para poder pintar la marca en la pantalla de login. Si la petición trae un token válido,
-  // devuelve la configuración de SU empresa (no la de otra): sin esto, cada usuario vería la marca
-  // y los ajustes de la primera empresa creada.
-  @Public()
-  @UseGuards(OptionalJwtAuthGuard)
+  // Requiere sesión a propósito: antes de iniciar sesión no hay forma de saber de qué empresa es
+  // la persona (varias empresas comparten el mismo dominio/login), así que la pantalla de login usa
+  // la marca fija de CableGestion, no la de ninguna empresa en particular. Ver LoginPage.tsx /
+  // LoginScreen.kt. Una vez autenticado, cada quien ve solo la configuración de SU empresa.
   @Get()
-  get(@Req() request: { user: AuthenticatedUser | null }) {
-    const empresaId = request.user?.empresaId;
-    return empresaId
-      ? this.configuracionService.getConfiguracion(empresaId)
-      : this.configuracionService.getConfiguracionPublica();
+  get(@CurrentUser() usuario: AuthenticatedUser) {
+    return this.configuracionService.getConfiguracion(usuario.empresaId!);
   }
 
   @Roles("gestor")
