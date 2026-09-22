@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from "@nestjs/common
 import * as bcrypt from "bcrypt";
 import { PrismaService } from "../prisma/prisma.service";
 import type { CreateEmpresaDto } from "./dto/create-empresa.dto";
+import { importarClientes, type DatosImportacion } from "./importar-clientes";
 
 // Único módulo (junto a los cron) con permiso explícito para usar el PrismaService crudo:
 // el panel proveedor opera A PROPÓSITO cruzando empresas (listarlas, crearlas, suspenderlas).
@@ -83,5 +84,10 @@ export class AdminService {
     // No revoca tokens ya emitidos (límite aceptado, documentado en el plan): el bloqueo
     // real ocurre en el próximo intento de login de un usuario de esta empresa.
     return this.prisma.empresa.update({ where: { id }, data: { estado: "suspendida" } });
+  }
+
+  async importarClientes(id: string, datos: DatosImportacion) {
+    await this.obtenerEmpresa(id);
+    return importarClientes(this.prisma, id, datos);
   }
 }

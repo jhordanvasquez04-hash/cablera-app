@@ -54,7 +54,9 @@ android {
         debug {
             // Dispositivo físico conectado por USB: `adb reverse tcp:4000 tcp:4000` túnel al backend
             // local. Para emulador, usar en su lugar "http://10.0.2.2:4000/" (loopback del host).
-            buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:4000/\"")
+            // Para probar contra un backend remoto ya desplegado, sin tocar este valor por defecto:
+            // -PCABLERA_API_URL_DEBUG=https://tu-backend/ (o la misma variable de entorno).
+            buildConfigField("String", "API_BASE_URL", "\"${releaseProp("CABLERA_API_URL_DEBUG") ?: "http://127.0.0.1:4000/"}\"")
         }
         release {
             isMinifyEnabled = true
