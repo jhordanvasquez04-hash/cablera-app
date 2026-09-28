@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Backend REAL de cablera (fusión con Keysls) — SIN el prefijo /api que tenía el backend
 // original de Keysls: las rutas de cablera van directo en la raíz (ej. /clientes, no /api/clientes).
-export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const api = axios.create({
   baseURL: BACKEND_URL,
