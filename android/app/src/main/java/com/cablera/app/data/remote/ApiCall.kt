@@ -1,6 +1,7 @@
 package com.cablera.app.data.remote
 
 import java.io.IOException
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -24,6 +25,11 @@ suspend fun <T> safeApiCall(call: suspend () -> T): Result<T> = try {
 } catch (e: SerializationException) {
     // El servidor respondió algo que la app no entiende (versión desfasada): error controlado, no un cierre de la app.
     Result.failure(Exception("Respuesta inesperada del servidor. Actualiza la aplicación."))
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Exception) {
+    // Errores propios de una operación compuesta (ej. "Cliente no encontrado"): mensaje legible, sin cerrar la app.
+    Result.failure(Exception(e.message ?: "No se pudo completar la operación"))
 }
 
 private fun extraerMensajeError(e: HttpException): String {
@@ -34,7 +40,9 @@ private fun extraerMensajeError(e: HttpException): String {
     }
     if (cuerpo.isNullOrBlank()) return "Error del servidor (${e.code()})"
     return try {
-        val mensaje = errorJson.parseToJsonElement(cuerpo).jsonObject["message"]
+        val raiz = errorJson.parseToJsonElement(cuerpo).jsonObject
+        // Keysls responde {"error": "..."}; el "message" (texto o lista) queda por compatibilidad.
+        val mensaje = raiz["error"] ?: raiz["message"]
         when (mensaje) {
             is JsonArray -> mensaje.joinToString("\n") { it.jsonPrimitive.content }
             is JsonPrimitive -> mensaje.content

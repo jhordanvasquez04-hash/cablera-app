@@ -1,231 +1,199 @@
 package com.cablera.app.data.remote
 
-import com.cablera.app.data.remote.dto.AprobarGastoRequest
-import com.cablera.app.data.remote.dto.BoletaCreadaDto
-import com.cablera.app.data.remote.dto.BoletaDetalleDto
-import com.cablera.app.data.remote.dto.BoletaResumenDto
-import com.cablera.app.data.remote.dto.CargoPendienteDto
-import com.cablera.app.data.remote.dto.CategoriaEgresoDto
-import com.cablera.app.data.remote.dto.ClienteDto
-import com.cablera.app.data.remote.dto.ComentarServicioRequest
-import com.cablera.app.data.remote.dto.CreateServicioTecnicoRequest
-import com.cablera.app.data.remote.dto.CreateTipoServicioTecnicoRequest
-import com.cablera.app.data.remote.dto.LiquidarServicioRequest
-import com.cablera.app.data.remote.dto.ServicioTecnicoDto
-import com.cablera.app.data.remote.dto.TipoServicioTecnicoDto
-import com.cablera.app.data.remote.dto.UpdateTipoServicioTecnicoRequest
-import com.cablera.app.data.remote.dto.ClienteFichaDto
-import com.cablera.app.data.remote.dto.ConfiguracionDto
-import com.cablera.app.data.remote.dto.CreateCategoriaEgresoRequest
-import com.cablera.app.data.remote.dto.CreateClienteRequest
-import com.cablera.app.data.remote.dto.CreateMovimientoRequest
-import com.cablera.app.data.remote.dto.CreateTipoServicioRequest
-import com.cablera.app.data.remote.dto.CreateUsuarioRequest
-import com.cablera.app.data.remote.dto.DarDeBajaRequest
-import com.cablera.app.data.remote.dto.DescuentoDto
-import com.cablera.app.data.remote.dto.CreateDescuentoRequest
-import com.cablera.app.data.remote.dto.ServicioContratadoInput
-import com.cablera.app.data.remote.dto.UpdateServicioContratadoRequest
-import com.cablera.app.data.remote.dto.GastoReportadoDto
+import com.cablera.app.data.remote.dto.KAbrirCajaRequest
+import com.cablera.app.data.remote.dto.KAnularPagoRequest
+import com.cablera.app.data.remote.dto.KCajaTurno
+import com.cablera.app.data.remote.dto.KCambiarEstadoOrdenRequest
+import com.cablera.app.data.remote.dto.KCargo
+import com.cablera.app.data.remote.dto.KCerrarCajaRequest
+import com.cablera.app.data.remote.dto.KCliente
+import com.cablera.app.data.remote.dto.KClienteRequest
+import com.cablera.app.data.remote.dto.KContrato
+import com.cablera.app.data.remote.dto.KContratoRequest
+import com.cablera.app.data.remote.dto.KEgreso
+import com.cablera.app.data.remote.dto.KEgresoRequest
+import com.cablera.app.data.remote.dto.KEmpresa
+import com.cablera.app.data.remote.dto.KEmpresaRequest
+import com.cablera.app.data.remote.dto.KKpisResponse
+import com.cablera.app.data.remote.dto.KReportePagos
+import com.cablera.app.data.remote.dto.KLoginResponse
+import com.cablera.app.data.remote.dto.KMovimientoCaja
+import com.cablera.app.data.remote.dto.KOrden
+import com.cablera.app.data.remote.dto.KOrdenRequest
+import com.cablera.app.data.remote.dto.KPago
+import com.cablera.app.data.remote.dto.KPlan
+import com.cablera.app.data.remote.dto.KPuntoRed
+import com.cablera.app.data.remote.dto.KRegistrarPagoRequest
+import com.cablera.app.data.remote.dto.KTecnico
 import com.cablera.app.data.remote.dto.LoginRequest
-import com.cablera.app.data.remote.dto.LoginResponse
-import com.cablera.app.data.remote.dto.MovimientoCajaDto
-import com.cablera.app.data.remote.dto.RegistrarPagoRequest
-import com.cablera.app.data.remote.dto.ReportarGastoRequest
-import com.cablera.app.data.remote.dto.ResumenCajaDto
-import com.cablera.app.data.remote.dto.ResumenCobranzaDto
-import com.cablera.app.data.remote.dto.TipoServicioDto
-import com.cablera.app.data.remote.dto.UpdateClienteRequest
-import com.cablera.app.data.remote.dto.UpdateConfiguracionRequest
-import com.cablera.app.data.remote.dto.UsuarioListadoDto
-import com.cablera.app.data.remote.dto.ZonaDto
-import okhttp3.MultipartBody
-import okhttp3.ResponseBody
 import retrofit2.http.Body
-import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
-import retrofit2.http.Part
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
-import retrofit2.http.Streaming
 
+/**
+ * API de Keysls (Express) bajo `/api`. Solo lo que usa la app del celular; las respuestas se
+ * traducen a los modelos de UI en `data/mapper/KeyslsMappers.kt`.
+ */
 interface ApiService {
 
     @POST("auth/login")
-    suspend fun login(@Body request: LoginRequest): LoginResponse
+    suspend fun login(@Body request: LoginRequest): KLoginResponse
 
-    @GET("zonas")
-    suspend fun listarZonas(): List<ZonaDto>
-
-    @GET("cobranza/resumen")
-    suspend fun resumenCobranza(
-        @Query("zonaId") zonaId: String?,
-        @Query("busqueda") busqueda: String?,
-    ): ResumenCobranzaDto
-
+    // Los listados aceptan limit/offset (paginación) y filtros; sin limit devuelven todo, como la web.
     @GET("clientes")
     suspend fun listarClientes(
-        @Query("zonaId") zonaId: String?,
-        @Query("estado") estado: String?,
-        @Query("busqueda") busqueda: String?,
-    ): List<ClienteDto>
+        @Query("q") q: String? = null,
+        @Query("sector") sector: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+    ): List<KCliente>
 
     @GET("clientes/{id}")
-    suspend fun obtenerCliente(@Path("id") id: String): ClienteDto
-
-    @GET("clientes/{id}/ficha")
-    suspend fun obtenerFichaCliente(@Path("id") id: String): ClienteFichaDto
-
-    @GET("clientes/{id}/cargos-pendientes")
-    suspend fun cargosPendientesDeCliente(@Path("id") id: String): List<CargoPendienteDto>
+    suspend fun obtenerCliente(@Path("id") id: String): KCliente
 
     @POST("clientes")
-    suspend fun crearCliente(@Body request: CreateClienteRequest): ClienteDto
+    suspend fun crearCliente(@Body request: KClienteRequest): KCliente
 
-    @PATCH("clientes/{id}")
-    suspend fun actualizarCliente(@Path("id") id: String, @Body request: UpdateClienteRequest): ClienteDto
+    @PUT("clientes/{id}")
+    suspend fun actualizarCliente(@Path("id") id: String, @Body request: KClienteRequest): KCliente
 
-    @POST("clientes/{id}/baja")
-    suspend fun darDeBajaCliente(@Path("id") id: String, @Body request: DarDeBajaRequest): ClienteDto
+    @GET("contratos")
+    suspend fun listarContratos(
+        @Query("q") q: String? = null,
+        @Query("sector") sector: String? = null,
+        @Query("conDeuda") conDeuda: Boolean? = null,
+        @Query("clienteIds") clienteIds: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+    ): List<KContrato>
 
-    @POST("clientes/{id}/suspender")
-    suspend fun suspenderCliente(@Path("id") id: String): ClienteDto
+    // Zonas que usa la empresa (sectores distintos de sus contratos); vacío = no usa zonas.
+    @GET("contratos/sectores")
+    suspend fun listarSectores(): List<String>
 
-    @POST("clientes/{id}/activar")
-    suspend fun activarCliente(@Path("id") id: String): ClienteDto
+    @GET("contratos/{id}")
+    suspend fun obtenerContrato(@Path("id") id: String): KContrato
 
-    @POST("clientes/{id}/servicios")
-    suspend fun agregarServicio(@Path("id") id: String, @Body request: ServicioContratadoInput): ClienteDto
+    @POST("contratos")
+    suspend fun crearContrato(@Body request: KContratoRequest): KContrato
 
-    @PATCH("clientes/{id}/servicios/{servicioId}")
-    suspend fun actualizarServicio(
-        @Path("id") id: String,
-        @Path("servicioId") servicioId: String,
-        @Body request: UpdateServicioContratadoRequest,
-    ): ClienteDto
+    // La API exige el objeto completo también al editar (no acepta cambios parciales).
+    @PUT("contratos/{id}")
+    suspend fun actualizarContrato(@Path("id") id: String, @Body request: KContratoRequest): KContrato
 
-    @POST("clientes/{id}/servicios/{servicioId}/suspender")
-    suspend fun suspenderServicio(@Path("id") id: String, @Path("servicioId") servicioId: String): ClienteDto
+    @GET("cargos/contrato/{id}")
+    suspend fun cargosDeContrato(@Path("id") id: String): List<KCargo>
 
-    @POST("clientes/{id}/servicios/{servicioId}/activar")
-    suspend fun activarServicio(@Path("id") id: String, @Path("servicioId") servicioId: String): ClienteDto
+    @GET("pagos")
+    suspend fun listarPagos(
+        @Query("q") q: String? = null,
+        @Query("fechaDesde") fechaDesde: String? = null,
+        @Query("fechaHasta") fechaHasta: String? = null,
+        @Query("contratoId") contratoId: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+    ): List<KPago>
 
-    @POST("clientes/{id}/servicios/{servicioId}/baja")
-    suspend fun darDeBajaServicio(
-        @Path("id") id: String,
-        @Path("servicioId") servicioId: String,
-        @Body request: DarDeBajaRequest,
-    ): ClienteDto
+    @GET("pagos/{id}")
+    suspend fun obtenerPago(@Path("id") id: String): KPago
 
-    @GET("clientes/{id}/servicios/{servicioId}/descuentos")
-    suspend fun listarDescuentosDeServicio(@Path("id") id: String, @Path("servicioId") servicioId: String): List<DescuentoDto>
+    // Anular no borra el pago: queda en el historial como anulado y su monto vuelve a ser deuda.
+    @POST("pagos/{id}/anular")
+    suspend fun anularPago(@Path("id") id: String, @Body request: KAnularPagoRequest): KPago
 
-    @POST("clientes/{id}/servicios/{servicioId}/descuentos")
-    suspend fun aplicarDescuento(
-        @Path("id") id: String,
-        @Path("servicioId") servicioId: String,
-        @Body request: CreateDescuentoRequest,
-    ): DescuentoDto
+    @GET("pagos/reporte")
+    suspend fun reportePagos(
+        @Query("fechaDesde") fechaDesde: String? = null,
+        @Query("fechaHasta") fechaHasta: String? = null,
+    ): KReportePagos
 
-    @POST("boletas")
-    suspend fun registrarPago(@Body request: RegistrarPagoRequest): BoletaCreadaDto
+    @GET("dashboard/kpis")
+    suspend fun kpis(): KKpisResponse
 
-    @GET("boletas")
-    suspend fun listarBoletas(@Query("busqueda") busqueda: String?): List<BoletaResumenDto>
+    @POST("pagos")
+    suspend fun registrarPago(@Body request: KRegistrarPagoRequest): KPago
 
-    @GET("boletas/{id}")
-    suspend fun obtenerBoleta(@Path("id") id: String): BoletaDetalleDto
+    @GET("caja/actual")
+    suspend fun cajaActual(): KCajaTurno?
 
-    @POST("boletas/{id}/anular")
-    suspend fun anularBoleta(@Path("id") id: String, @Body body: Map<String, String>): BoletaDetalleDto
+    @GET("caja/historial")
+    suspend fun cajaHistorial(): List<KCajaTurno>
 
-    @POST("caja/gastos-reportados")
-    suspend fun reportarGasto(@Body request: ReportarGastoRequest): GastoReportadoDto
+    @POST("caja/abrir")
+    suspend fun abrirCaja(@Body request: KAbrirCajaRequest): KCajaTurno
 
-    @GET("configuracion")
-    suspend fun obtenerConfiguracion(): ConfiguracionDto
+    @POST("caja/cerrar")
+    suspend fun cerrarCaja(@Body request: KCerrarCajaRequest): KCajaTurno
 
-    @PATCH("configuracion")
-    suspend fun actualizarConfiguracion(@Body request: UpdateConfiguracionRequest): ConfiguracionDto
+    @GET("egresos")
+    suspend fun listarEgresos(
+        @Query("fechaDesde") fechaDesde: String? = null,
+        @Query("fechaHasta") fechaHasta: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+    ): List<KEgreso>
 
-    @Multipart
-    @POST("configuracion/logo")
-    suspend fun subirLogo(@Part file: MultipartBody.Part): ConfiguracionDto
+    @POST("egresos")
+    suspend fun crearEgreso(@Body request: KEgresoRequest): KEgreso
 
-    @DELETE("configuracion/logo")
-    suspend fun quitarLogo(): ConfiguracionDto
+    // Ingreso externo: plata que entra sin ser el pago de un cliente (mismo cuerpo que un egreso).
+    @POST("ingresos")
+    suspend fun crearIngreso(@Body request: KEgresoRequest): KEgreso
 
-    @GET("usuarios")
-    suspend fun listarUsuarios(): List<UsuarioListadoDto>
+    @GET("ingresos")
+    suspend fun listarIngresos(
+        @Query("fechaDesde") fechaDesde: String? = null,
+        @Query("fechaHasta") fechaHasta: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+    ): List<KEgreso>
 
-    @POST("usuarios")
-    suspend fun crearUsuario(@Body request: CreateUsuarioRequest): UsuarioListadoDto
-
-    @POST("usuarios/{id}/desactivar")
-    suspend fun desactivarUsuario(@Path("id") id: String): UsuarioListadoDto
-
-    @POST("usuarios/{id}/activar")
-    suspend fun activarUsuario(@Path("id") id: String): UsuarioListadoDto
-
-    @GET("tipos-servicio")
-    suspend fun listarTiposServicio(): List<TipoServicioDto>
-
-    @POST("tipos-servicio")
-    suspend fun crearTipoServicio(@Body request: CreateTipoServicioRequest): TipoServicioDto
-
-    @Streaming
-    @GET("exportacion/backup-excel")
-    suspend fun descargarBackupExcel(): ResponseBody
-
+    // Lista unificada (cobros + ingresos externos + egresos), filtrable por tipo: "INGRESO" | "EGRESO".
     @GET("caja/movimientos")
-    suspend fun listarMovimientosCaja(@Query("desde") desde: String?, @Query("hasta") hasta: String?): List<MovimientoCajaDto>
+    suspend fun movimientosCaja(
+        @Query("tipo") tipo: String? = null,
+        @Query("fechaDesde") fechaDesde: String? = null,
+        @Query("fechaHasta") fechaHasta: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+    ): List<KMovimientoCaja>
 
-    @POST("caja/movimientos")
-    suspend fun crearMovimientoCaja(@Body request: CreateMovimientoRequest): MovimientoCajaDto
+    @GET("ordenes-servicio")
+    suspend fun listarOrdenes(
+        @Query("estado") estado: String? = null,
+        @Query("q") q: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("offset") offset: Int? = null,
+        @Query("contratoIds") contratoIds: String? = null,
+        /** "prioridad": abiertas primero, luego canceladas y al final completadas. */
+        @Query("orden") orden: String? = null,
+    ): List<KOrden>
 
-    @GET("caja/resumen")
-    suspend fun resumenCaja(@Query("desde") desde: String?, @Query("hasta") hasta: String?): ResumenCajaDto
+    @GET("ordenes-servicio/{id}")
+    suspend fun obtenerOrden(@Path("id") id: String): KOrden
 
-    @GET("caja/gastos-reportados")
-    suspend fun listarGastosReportados(@Query("estado") estado: String?): List<GastoReportadoDto>
+    @POST("ordenes-servicio")
+    suspend fun crearOrden(@Body request: KOrdenRequest): KOrden
 
-    @POST("caja/gastos-reportados/{id}/aprobar")
-    suspend fun aprobarGasto(@Path("id") id: String, @Body request: AprobarGastoRequest): GastoReportadoDto
+    @PATCH("ordenes-servicio/{id}/estado")
+    suspend fun cambiarEstadoOrden(@Path("id") id: String, @Body request: KCambiarEstadoOrdenRequest): KOrden
 
-    @POST("caja/gastos-reportados/{id}/rechazar")
-    suspend fun rechazarGasto(@Path("id") id: String): GastoReportadoDto
+    @GET("tecnicos")
+    suspend fun listarTecnicos(): List<KTecnico>
 
-    @GET("categorias-egreso")
-    suspend fun listarCategoriasEgreso(): List<CategoriaEgresoDto>
+    @GET("puntos-red")
+    suspend fun listarPuntosRed(): List<KPuntoRed>
 
-    @POST("categorias-egreso")
-    suspend fun crearCategoriaEgreso(@Body request: CreateCategoriaEgresoRequest): CategoriaEgresoDto
+    @GET("planes")
+    suspend fun listarPlanes(): List<KPlan>
 
-    @GET("tipos-servicio-tecnico")
-    suspend fun listarTiposServicioTecnico(): List<TipoServicioTecnicoDto>
+    @GET("empresa")
+    suspend fun obtenerEmpresa(): KEmpresa
 
-    @POST("tipos-servicio-tecnico")
-    suspend fun crearTipoServicioTecnico(@Body request: CreateTipoServicioTecnicoRequest): TipoServicioTecnicoDto
-
-    @PATCH("tipos-servicio-tecnico/{id}")
-    suspend fun actualizarTipoServicioTecnico(@Path("id") id: String, @Body request: UpdateTipoServicioTecnicoRequest): TipoServicioTecnicoDto
-
-    @GET("servicios-tecnicos")
-    suspend fun listarServiciosTecnicos(
-        @Query("estado") estado: String?,
-        @Query("tipoServicioTecnicoId") tipoServicioTecnicoId: String?,
-        @Query("clienteId") clienteId: String?,
-    ): List<ServicioTecnicoDto>
-
-    @POST("servicios-tecnicos")
-    suspend fun crearServicioTecnico(@Body request: CreateServicioTecnicoRequest): ServicioTecnicoDto
-
-    @POST("servicios-tecnicos/{id}/comentar")
-    suspend fun comentarServicioTecnico(@Path("id") id: String, @Body request: ComentarServicioRequest): ServicioTecnicoDto
-
-    @POST("servicios-tecnicos/{id}/liquidar")
-    suspend fun liquidarServicioTecnico(@Path("id") id: String, @Body request: LiquidarServicioRequest): ServicioTecnicoDto
+    @PUT("empresa")
+    suspend fun actualizarEmpresa(@Body request: KEmpresaRequest): KEmpresa
 }

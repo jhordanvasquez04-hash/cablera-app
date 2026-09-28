@@ -1,0 +1,17 @@
+[
+ {
+  "id": "3b59bb16-2636-4346-83bd-0a6e8585e921",
+  "contratoId": "48d28830-73fd-40d3-b5c1-fcefeb73c1cf",
+  "periodo": "2026-09",
+  "monto": "35",
+  "vencimiento": "2026-10-05T05:00:00.000Z",
+  "estado": "PENDIENTE",
+  "nota": null,
+  "montoOriginal": null,
+  "createdAt": "2026-09-25T16:17:23.314Z",
+  "updatedAt": "2026-09-25T16:17:23.314Z",
+  "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3",
+  "saldo": 35,
+  "vencido": false
+ }
+]

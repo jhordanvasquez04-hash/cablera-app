@@ -1,7 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Ip, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AdminService } from "./admin.service";
 import { CreateEmpresaDto } from "./dto/create-empresa.dto";
+import { UpdateEmpresaDto } from "./dto/update-empresa.dto";
+import { ActualizarEstadoEmpresaDto } from "./dto/actualizar-estado-empresa.dto";
+import { ResetearPasswordUsuarioDto } from "./dto/resetear-password-usuario.dto";
+import { RegistrarPagoSuscripcionDto } from "./dto/registrar-pago-suscripcion.dto";
+import { RegistrarPagoSuscripcionGlobalDto } from "./dto/registrar-pago-suscripcion-global.dto";
 import { Roles } from "../auth/decorators/roles.decorator";
 import type { DatosImportacion } from "./importar-clientes";
 
@@ -13,24 +18,80 @@ const VEINTE_MB = 20 * 1024 * 1024;
 export class AdminController {
   constructor(private adminService: AdminService) {}
 
+  @Get("resumen")
+  resumen() {
+    return this.adminService.resumen();
+  }
+
   @Get("empresas")
   listarEmpresas() {
     return this.adminService.listarEmpresas();
   }
 
-  @Post("empresas")
-  crearEmpresa(@Body() dto: CreateEmpresaDto) {
-    return this.adminService.crearEmpresa(dto);
+  @Get("empresas/:id")
+  obtenerEmpresa(@Param("id") id: string) {
+    return this.adminService.obtenerEmpresaDetalle(id);
   }
 
+  @Post("empresas")
+  crearEmpresa(@Body() dto: CreateEmpresaDto, @Ip() ip: string) {
+    return this.adminService.crearEmpresa(dto, ip);
+  }
+
+  @Patch("empresas/:id")
+  actualizarEmpresa(@Param("id") id: string, @Body() dto: UpdateEmpresaDto, @Ip() ip: string) {
+    return this.adminService.actualizarEmpresa(id, dto, ip);
+  }
+
+  @Patch("empresas/:id/estado")
+  actualizarEstado(@Param("id") id: string, @Body() dto: ActualizarEstadoEmpresaDto, @Ip() ip: string) {
+    return this.adminService.actualizarEstado(id, dto.estado, ip);
+  }
+
+  // Mantenidos por compatibilidad con el panel anterior — internamente son actualizarEstado().
   @Post("empresas/:id/activar")
-  activar(@Param("id") id: string) {
-    return this.adminService.activar(id);
+  activar(@Param("id") id: string, @Ip() ip: string) {
+    return this.adminService.actualizarEstado(id, "activa", ip);
   }
 
   @Post("empresas/:id/suspender")
-  suspender(@Param("id") id: string) {
-    return this.adminService.suspender(id);
+  suspender(@Param("id") id: string, @Ip() ip: string) {
+    return this.adminService.actualizarEstado(id, "suspendida", ip);
+  }
+
+  @Patch("usuarios/:id/password")
+  resetearPasswordUsuario(@Param("id") id: string, @Body() dto: ResetearPasswordUsuarioDto, @Ip() ip: string) {
+    return this.adminService.resetearPasswordUsuario(id, dto.password, ip);
+  }
+
+  @Get("actividad")
+  listarActividad(@Query("limite") limite?: string) {
+    return this.adminService.listarActividad(limite ? Number(limite) : undefined);
+  }
+
+  @Get("pagos")
+  listarTodosLosPagos() {
+    return this.adminService.listarTodosLosPagos();
+  }
+
+  @Get("empresas/:id/pagos-suscripcion")
+  listarPagosSuscripcion(@Param("id") id: string) {
+    return this.adminService.listarPagosSuscripcion(id);
+  }
+
+  @Post("empresas/:id/pagos-suscripcion")
+  registrarPagoSuscripcion(@Param("id") id: string, @Body() dto: RegistrarPagoSuscripcionDto, @Ip() ip: string) {
+    return this.adminService.registrarPagoSuscripcion(id, dto, ip);
+  }
+
+  @Post("pagos-suscripcion")
+  registrarPagoSuscripcionGlobal(@Body() dto: RegistrarPagoSuscripcionGlobalDto, @Ip() ip: string) {
+    return this.adminService.registrarPagoSuscripcion(dto.empresaId, dto, ip);
+  }
+
+  @Delete("pagos-suscripcion/:id")
+  eliminarPagoSuscripcion(@Param("id") id: string, @Ip() ip: string) {
+    return this.adminService.eliminarPagoSuscripcion(id, ip);
   }
 
   /**

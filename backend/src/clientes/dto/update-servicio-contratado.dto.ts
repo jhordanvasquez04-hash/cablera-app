@@ -15,4 +15,8 @@ export class UpdateServicioContratadoDto {
   @Min(1)
   @Max(28)
   fechaFacturacionOverride?: number;
+
+  @IsOptional()
+  @IsString()
+  planId?: string;
 }

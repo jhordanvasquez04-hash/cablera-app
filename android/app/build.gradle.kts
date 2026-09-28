@@ -52,11 +52,13 @@ android {
 
     buildTypes {
         debug {
-            // Dispositivo físico conectado por USB: `adb reverse tcp:4000 tcp:4000` túnel al backend
-            // local. Para emulador, usar en su lugar "http://10.0.2.2:4000/" (loopback del host).
-            // Para probar contra un backend remoto ya desplegado, sin tocar este valor por defecto:
-            // -PCABLERA_API_URL_DEBUG=https://tu-backend/ (o la misma variable de entorno).
-            buildConfigField("String", "API_BASE_URL", "\"${releaseProp("CABLERA_API_URL_DEBUG") ?: "http://127.0.0.1:4000/"}\"")
+            // Backend de Keysls (Express) en el puerto 3100 y bajo /api. Dispositivo físico por USB:
+            // `adb reverse tcp:3100 tcp:3100` abre el túnel al backend local. Para emulador, usar en
+            // su lugar "http://10.0.2.2:3100/api/" (loopback del host). Para probar contra un backend
+            // remoto ya desplegado, sin tocar este valor por defecto:
+            // -PCABLERA_API_URL_DEBUG=https://tu-backend/api/ (o la misma variable de entorno).
+            // La URL debe terminar en "/api/" (con la barra final: lo exige Retrofit).
+            buildConfigField("String", "API_BASE_URL", "\"${releaseProp("CABLERA_API_URL_DEBUG") ?: "http://127.0.0.1:3100/api/"}\"")
         }
         release {
             isMinifyEnabled = true
@@ -65,7 +67,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // La URL real se inyecta al publicar (CABLERA_API_URL); sin ella el empaquetado falla (ver abajo).
+            // La URL real se inyecta al publicar (CABLERA_API_URL, terminada en "/api/"); sin ella el empaquetado falla (ver abajo).
             buildConfigField("String", "API_BASE_URL", "\"${apiUrlRelease ?: "https://sin-configurar.invalid/"}\"")
             if (puedeFirmar) signingConfig = signingConfigs.getByName("release")
         }

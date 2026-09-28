@@ -27,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +52,7 @@ private val LoginCardShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onNavigateToLoginTecnico: () -> Unit = {},
     viewModel: LoginViewModel = run {
         val container = LocalAppContainer.current
         viewModel(factory = LambdaViewModelFactory { LoginViewModel(container.authRepository) })
@@ -164,6 +166,10 @@ fun LoginScreen(
                         } else {
                             Text("Ingresar", style = MaterialTheme.typography.bodyLarge)
                         }
+                    }
+
+                    TextButton(onClick = onNavigateToLoginTecnico, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                        Text("Soy técnico de campo, ir al portal")
                     }
                 }
             }

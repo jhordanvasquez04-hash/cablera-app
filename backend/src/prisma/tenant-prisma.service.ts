@@ -11,6 +11,7 @@ const TENANT_SCOPED_MODELS = new Set([
   "Zona",
   "TipoServicio",
   "Cliente",
+  "ServicioContratado",
   "Descuento",
   "CargoMensual",
   "Boleta",
@@ -20,6 +21,25 @@ const TENANT_SCOPED_MODELS = new Set([
   "GastoReportado",
   "TipoServicioTecnico",
   "ServicioTecnico",
+
+  // ── Fusión con Keysls (Sistema-de-Gestion-ISP) ──
+  // NO incluye ActividadLog a propósito: solo lo ve el super_admin, no es un dato de
+  // negocio de un tenant (mismo criterio que ya usaba Keysls en utils/prisma.js).
+  "Tecnico",
+  "Secretario",
+  "PuntoRed",
+  "Olt",
+  "Onu",
+  "Plan",
+  "Contrato",
+  "OrdenServicio",
+  "OrdenConsumo",
+  "Producto",
+  "ProductoVariante",
+  "MovimientoStock",
+  "CajaTurno",
+  "MetodoPagoEmpresa",
+  "PagoSuscripcion",
 ]);
 
 /**

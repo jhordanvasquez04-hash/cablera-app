@@ -21,11 +21,13 @@ object EstadosBoleta {
     const val ANULADA = "anulada"
 }
 
+// En Keysls lo que se entrega al cliente es el comprobante de un PAGO; la app lo sigue mostrando
+// como "boleta" (ver KeyslsMappers). Un pago no se anula desde el celular.
 @Serializable
 data class BoletaClienteDto(
-    val id: String,
     val nombreCompleto: String,
-    val zona: String,
+    val dni: String? = null,
+    val telefono: String? = null,
 )
 
 @Serializable
@@ -61,18 +63,6 @@ data class BoletaDetalleDto(
     val dni: String? = null,
     val registradoPor: String? = null,
     val lineas: List<BoletaLineaDto>,
-)
-
-@Serializable
-data class RegistrarPagoRequest(
-    val clienteId: String,
-    val cargoIds: List<String>,
-    val montoPagado: Double,
-    val metodoPago: String,
-)
-
-/** La API responde con la fila cruda de `boleta` recién creada; solo necesitamos el id para navegar al detalle. */
-@Serializable
-data class BoletaCreadaDto(
-    val id: String,
+    val motivoAnulacion: String? = null,
+    val fechaAnulacion: String? = null,
 )

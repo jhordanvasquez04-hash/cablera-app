@@ -105,9 +105,11 @@ usuarios
 ## Estructura del monorepo
 
 ```
-cablera-app/
+keysls/
 ├── backend/          # NestJS + Prisma + PostgreSQL
-├── frontend/         # React + Vite + Tailwind
+├── frontend/         # React + Vite + Tailwind (panel del gestor)
+├── frontend-keysls/  # Panel Keysls (React + Vite, JS): contratos, órdenes, almacén, super-admin
+├── android/          # App móvil (gestor y técnico)
 ├── packages/shared/  # Tipos/enums compartidos entre backend y frontend
 └── docker-compose.yml # Postgres para desarrollo local
 ```

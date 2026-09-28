@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
+import type { Request } from "express";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../decorators/current-user.decorator";
 
@@ -12,20 +13,8 @@ interface JwtPayload {
   empresaId: string | null;
 }
 
-interface EstadoCuenta {
-  puedeEntrar: boolean;
-  hasta: number;
-}
-
-// Cuánto se recuerda el estado de una cuenta antes de volver a consultarlo: suspender una empresa
-// o desactivar un usuario corta sus sesiones en, como mucho, este tiempo (sin una consulta a la
-// base por cada request).
-const VIGENCIA_ESTADO_MS = 30_000;
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  private readonly estadoCuentas = new Map<string, EstadoCuenta>();
-
   constructor(
     configService: ConfigService,
     private prisma: PrismaService,
@@ -34,29 +23,37 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>("JWT_SECRET"),
+      // Necesita el token crudo (no solo el payload decodificado) para buscarlo en
+      // TokenSesion — ver el comentario abajo.
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    // Un token emitido antes de suspender la empresa o desactivar la cuenta sigue siendo
-    // criptográficamente válido: se corta aquí para que ambas acciones surtan efecto sin esperar
-    // al vencimiento natural del token (hasta VIGENCIA_ESTADO_MS de retraso).
-    if (!(await this.puedeEntrar(payload.sub))) {
-      throw new UnauthorizedException("Esta cuenta ya no tiene acceso. Contacta al administrador.");
+  /**
+   * Fusión con Keysls: valida contra TokenSesion (BD), no contra una caché en memoria con
+   * ventana de 30s como antes. Dos motivos por los que es mejor:
+   * 1. Instantáneo — desactivar la cuenta, suspender la empresa, o cerrar sesión (logout)
+   *    cortan el acceso en la SIGUIENTE petición, no "hasta 30 segundos después".
+   * 2. Sobrevive un reinicio del backend y funciona igual con varias réplicas corriendo
+   *    detrás de un load balancer (una caché en memoria de una instancia no la ven las demás).
+   * El costo es una consulta a la BD por request en vez de cada ~30s — aceptable: es una
+   * búsqueda por índice único (TokenSesion.token), y ya era el peor caso de antes.
+   */
+  async validate(req: Request, payload: JwtPayload): Promise<AuthenticatedUser> {
+    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+    const sesion = token
+      ? await this.prisma.tokenSesion.findUnique({
+          where: { token },
+          select: { expiresAt: true, usuario: { select: { activo: true, empresa: { select: { estado: true } } } } },
+        })
+      : null;
+
+    // `estado !== "activa"` (no solo "suspendida") — ver el comentario en auth.service.ts.
+    const empresaBloqueada = sesion?.usuario.empresa != null && sesion.usuario.empresa.estado !== "activa";
+    if (!sesion || sesion.expiresAt < new Date() || !sesion.usuario.activo || empresaBloqueada) {
+      throw new UnauthorizedException("Esta sesión ya no es válida. Vuelve a iniciar sesión.");
     }
+
     return { userId: payload.sub, email: payload.email, rol: payload.rol, empresaId: payload.empresaId ?? null };
-  }
-
-  private async puedeEntrar(usuarioId: string): Promise<boolean> {
-    const recordado = this.estadoCuentas.get(usuarioId);
-    if (recordado && recordado.hasta > Date.now()) return recordado.puedeEntrar;
-
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: usuarioId },
-      select: { activo: true, empresa: { select: { estado: true } } },
-    });
-    const puedeEntrar = !!usuario?.activo && usuario.empresa?.estado !== "suspendida";
-    this.estadoCuentas.set(usuarioId, { puedeEntrar, hasta: Date.now() + VIGENCIA_ESTADO_MS });
-    return puedeEntrar;
   }
 }

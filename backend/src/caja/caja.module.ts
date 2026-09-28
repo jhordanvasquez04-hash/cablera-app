@@ -5,9 +5,13 @@ import { MovimientosCajaController } from "./movimientos-caja.controller";
 import { MovimientosCajaService } from "./movimientos-caja.service";
 import { GastosReportadosController } from "./gastos-reportados.controller";
 import { GastosReportadosService } from "./gastos-reportados.service";
+import { CajaTurnosController } from "./caja-turnos.controller";
+import { CajaTurnosService } from "./caja-turnos.service";
+import { ConfiguracionModule } from "../configuracion/configuracion.module";
 
 @Module({
-  controllers: [CategoriasEgresoController, MovimientosCajaController, GastosReportadosController],
-  providers: [CategoriasEgresoService, MovimientosCajaService, GastosReportadosService],
+  imports: [ConfiguracionModule],
+  controllers: [CategoriasEgresoController, MovimientosCajaController, GastosReportadosController, CajaTurnosController],
+  providers: [CategoriasEgresoService, MovimientosCajaService, GastosReportadosService, CajaTurnosService],
 })
 export class CajaModule {}

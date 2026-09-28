@@ -4,7 +4,7 @@ import { TenantPrismaService, type ScopedPrismaClient } from "../prisma/tenant-p
 import type { CreateMovimientoDto } from "./dto/create-movimiento.dto";
 import type { UpdateMovimientoDto } from "./dto/update-movimiento.dto";
 
-const METODOS_PAGO: MetodoPago[] = ["efectivo", "yape", "plin", "transferencia"];
+const METODOS_PAGO: MetodoPago[] = ["efectivo", "yape", "plin", "transferencia", "tarjeta"]; // + tarjeta (fusión con Keysls)
 
 // Perú no usa horario de verano: el offset es siempre UTC-5, todo el año.
 const LIMA_OFFSET_HOURS = 5;

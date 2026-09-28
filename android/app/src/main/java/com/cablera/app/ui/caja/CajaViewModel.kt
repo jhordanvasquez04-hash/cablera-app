@@ -2,14 +2,15 @@ package com.cablera.app.ui.caja
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cablera.app.data.remote.dto.CajaTurnoDto
 import com.cablera.app.data.remote.dto.CategoriaEgresoDto
 import com.cablera.app.data.remote.dto.CreateMovimientoRequest
-import com.cablera.app.data.remote.dto.GastoReportadoDto
 import com.cablera.app.data.remote.dto.MetodosPago
 import com.cablera.app.data.remote.dto.MovimientoCajaDto
 import com.cablera.app.data.remote.dto.ResumenCajaDto
 import com.cablera.app.data.remote.dto.TiposMovimientoCaja
 import com.cablera.app.data.repository.CajaRepository
+import com.cablera.app.data.repository.CajaTurnoRepository
 import com.cablera.app.ui.common.UiState
 import com.cablera.app.util.ZONA_PERU
 import java.time.LocalTime
@@ -25,20 +26,37 @@ data class CajaUiState(
     val mesSeleccionado: YearMonth = YearMonth.now(ZONA_PERU),
     val resumen: UiState<ResumenCajaDto> = UiState.Loading,
     val movimientos: UiState<List<MovimientoCajaDto>> = UiState.Loading,
-    val gastosPendientes: List<GastoReportadoDto> = emptyList(),
+    val hayMasMovimientos: Boolean = false,
+    /** Filtro de "Movimientos del mes": "ingreso", "egreso" o null (todos). */
+    val filtroMovimientos: String? = null,
+    /** Tipo del movimiento que se está registrando: "ingreso" (externo) o "egreso". */
+    val tipoMovimiento: String = TiposMovimientoCaja.EGRESO,
+    val cargandoMasMovimientos: Boolean = false,
     val categorias: List<CategoriaEgresoDto> = emptyList(),
     val mostrarForm: Boolean = false,
-    val tipoMovimiento: String = TiposMovimientoCaja.EGRESO,
     val montoMovimiento: String = "",
     val metodoMovimiento: String = MetodosPago.EFECTIVO,
     val categoriaId: String? = null,
     val descripcionMovimiento: String = "",
     val guardandoMovimiento: Boolean = false,
     val errorMovimiento: String? = null,
-    val procesandoGastoId: String? = null,
     val mostrandoNuevaCategoria: Boolean = false,
     val nombreNuevaCategoria: String = "",
     val creandoCategoria: Boolean = false,
+    // Turnos de caja con arqueo (Configuracion.modoCaja = "apertura_cierre", fusión con
+    // Keysls) — alternativa al modo "resumen" de siempre. `turnoActual == null` con
+    // `cargandoTurno == false` significa "no hay ninguno abierto ahora mismo".
+    val turnoActual: CajaTurnoDto? = null,
+    val cargandoTurno: Boolean = true,
+    val mostrarAbrirTurno: Boolean = false,
+    val montoAperturaTurno: String = "",
+    val guardandoAbrirTurno: Boolean = false,
+    val errorAbrirTurno: String? = null,
+    val mostrarCerrarTurno: Boolean = false,
+    val montoContadoTurno: String = "",
+    val observacionCierreTurno: String = "",
+    val guardandoCerrarTurno: Boolean = false,
+    val errorCerrarTurno: String? = null,
 ) {
     /** No tiene sentido navegar a meses futuros: el más reciente visible es el actual. */
     val puedeAvanzarMes: Boolean get() = mesSeleccionado < YearMonth.now(ZONA_PERU)
@@ -49,15 +67,71 @@ data class CajaUiState(
     val esMesActual: Boolean get() = mesSeleccionado == YearMonth.now(ZONA_PERU)
 }
 
-class CajaViewModel(private val cajaRepository: CajaRepository) : ViewModel() {
+class CajaViewModel(
+    private val cajaRepository: CajaRepository,
+    private val cajaTurnoRepository: CajaTurnoRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CajaUiState())
     val uiState: StateFlow<CajaUiState> = _uiState.asStateFlow()
 
     init {
         cargar()
-        cargarGastosPendientes()
         cargarCategorias()
+        cargarTurno()
+    }
+
+    // --- Turno de caja (apertura/cierre con arqueo) ---
+    fun cargarTurno() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(cargandoTurno = true)
+            cajaTurnoRepository.turnoAbierto()
+                .onSuccess { turno -> _uiState.value = _uiState.value.copy(turnoActual = turno, cargandoTurno = false) }
+                .onFailure { _uiState.value = _uiState.value.copy(cargandoTurno = false) }
+        }
+    }
+
+    fun abrirFormAbrirTurno() { _uiState.value = _uiState.value.copy(mostrarAbrirTurno = true, montoAperturaTurno = "", errorAbrirTurno = null) }
+    fun cerrarFormAbrirTurno() { _uiState.value = _uiState.value.copy(mostrarAbrirTurno = false) }
+    fun onMontoAperturaChange(v: String) { _uiState.value = _uiState.value.copy(montoAperturaTurno = v) }
+
+    fun confirmarAbrirTurno() {
+        val monto = _uiState.value.montoAperturaTurno.toDoubleOrNull()
+        if (monto == null || monto < 0) {
+            _uiState.value = _uiState.value.copy(errorAbrirTurno = "Ingresa un monto inicial válido")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(guardandoAbrirTurno = true, errorAbrirTurno = null)
+            cajaTurnoRepository.abrir(monto)
+                .onSuccess { turno ->
+                    _uiState.value = _uiState.value.copy(guardandoAbrirTurno = false, mostrarAbrirTurno = false, turnoActual = turno)
+                }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(guardandoAbrirTurno = false, errorAbrirTurno = e.message ?: "No se pudo abrir el turno") }
+        }
+    }
+
+    fun abrirFormCerrarTurno() { _uiState.value = _uiState.value.copy(mostrarCerrarTurno = true, montoContadoTurno = "", observacionCierreTurno = "", errorCerrarTurno = null) }
+    fun cerrarFormCerrarTurno() { _uiState.value = _uiState.value.copy(mostrarCerrarTurno = false) }
+    fun onMontoContadoChange(v: String) { _uiState.value = _uiState.value.copy(montoContadoTurno = v) }
+    fun onObservacionCierreChange(v: String) { _uiState.value = _uiState.value.copy(observacionCierreTurno = v) }
+
+    fun confirmarCerrarTurno() {
+        if (_uiState.value.turnoActual == null) return
+        val monto = _uiState.value.montoContadoTurno.toDoubleOrNull()
+        if (monto == null || monto < 0) {
+            _uiState.value = _uiState.value.copy(errorCerrarTurno = "Ingresa cuánto contaste en efectivo")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(guardandoCerrarTurno = true, errorCerrarTurno = null)
+            cajaTurnoRepository.cerrar(monto, _uiState.value.observacionCierreTurno.ifBlank { null })
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(guardandoCerrarTurno = false, mostrarCerrarTurno = false, turnoActual = null)
+                    cargar()
+                }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(guardandoCerrarTurno = false, errorCerrarTurno = e.message ?: "No se pudo cerrar el turno") }
+        }
     }
 
     fun mesAnterior() {
@@ -84,47 +158,87 @@ class CajaViewModel(private val cajaRepository: CajaRepository) : ViewModel() {
         val (desde, hasta) = rangoDelMes(_uiState.value.mesSeleccionado)
         viewModelScope.launch {
             val resumenGuardado = cajaRepository.resumenEnCache(desde, hasta)
-            val movimientosGuardados = cajaRepository.movimientosEnCache(desde, hasta)
             _uiState.value = _uiState.value.copy(
                 resumen = if (resumenGuardado != null) UiState.Success(resumenGuardado) else UiState.Loading,
-                movimientos = if (movimientosGuardados != null) UiState.Success(movimientosGuardados) else UiState.Loading,
             )
-            val resumenDeferred = async { cajaRepository.resumen(desde, hasta) }
-            val movimientosDeferred = async { cajaRepository.movimientos(desde, hasta) }
-
-            resumenDeferred.await()
+            cajaRepository.resumen(desde, hasta)
                 .onSuccess { data -> _uiState.value = _uiState.value.copy(resumen = UiState.Success(data)) }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(resumen = UiState.Error(e.message ?: "No se pudo cargar la caja")) }
+        }
+        cargarMovimientos()
+    }
 
-            movimientosDeferred.await()
-                .onSuccess { data -> _uiState.value = _uiState.value.copy(movimientos = UiState.Success(data)) }
+    /** Primera página de "Movimientos del mes", respetando el filtro de ingresos/egresos. */
+    fun cargarMovimientos() {
+        val estado = _uiState.value
+        val (desde, hasta) = rangoDelMes(estado.mesSeleccionado)
+        viewModelScope.launch {
+            val guardados = cajaRepository.movimientosEnCache(desde, hasta, estado.filtroMovimientos, 0)
+            _uiState.value = _uiState.value.copy(
+                movimientos = if (guardados != null) UiState.Success(guardados.items) else UiState.Loading,
+                hayMasMovimientos = guardados?.hayMas ?: false,
+            )
+            cajaRepository.movimientos(desde, hasta, estado.filtroMovimientos, 0)
+                .onSuccess { pagina -> _uiState.value = _uiState.value.copy(movimientos = UiState.Success(pagina.items), hayMasMovimientos = pagina.hayMas) }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(movimientos = UiState.Error(e.message ?: "No se pudo cargar los movimientos")) }
         }
     }
 
-    fun cargarGastosPendientes() {
+    /** Ingresos / Egresos: tocar el que ya está activo vuelve a mostrar todos. */
+    fun onFiltroMovimientosChange(tipo: String) {
+        val nuevo = if (_uiState.value.filtroMovimientos == tipo) null else tipo
+        _uiState.value = _uiState.value.copy(filtroMovimientos = nuevo)
+        cargarMovimientos()
+    }
+
+    /** Trae los siguientes 10 movimientos del mes. */
+    fun verMasMovimientos() {
+        val estado = _uiState.value
+        val actuales = (estado.movimientos as? UiState.Success)?.data ?: return
+        if (estado.cargandoMasMovimientos || !estado.hayMasMovimientos) return
+        val (desde, hasta) = rangoDelMes(estado.mesSeleccionado)
         viewModelScope.launch {
-            cajaRepository.gastosPendientes().onSuccess { gastos -> _uiState.value = _uiState.value.copy(gastosPendientes = gastos) }
+            _uiState.value = _uiState.value.copy(cargandoMasMovimientos = true)
+            cajaRepository.movimientos(desde, hasta, estado.filtroMovimientos, actuales.size)
+                .onSuccess { pagina ->
+                    _uiState.value = _uiState.value.copy(
+                        movimientos = UiState.Success((actuales + pagina.items).distinctBy { it.id }),
+                        hayMasMovimientos = pagina.hayMas,
+                        cargandoMasMovimientos = false,
+                    )
+                }
+                .onFailure { _uiState.value = _uiState.value.copy(cargandoMasMovimientos = false) }
         }
     }
 
     fun cargarCategorias() {
         viewModelScope.launch {
-            cajaRepository.listarCategorias().onSuccess { categorias ->
-                _uiState.value = _uiState.value.copy(categorias = categorias, categoriaId = _uiState.value.categoriaId ?: categorias.firstOrNull()?.id)
+            cajaRepository.listarCategorias(_uiState.value.tipoMovimiento).onSuccess { categorias ->
+                _uiState.value = _uiState.value.copy(categorias = categorias, categoriaId = categorias.firstOrNull()?.id)
             }
         }
     }
 
-    fun abrirForm(tipo: String) {
+    /** Cambia entre registrar un ingreso externo o un egreso; las categorías sugeridas son distintas. */
+    fun onTipoMovimientoChange(tipo: String) {
+        if (_uiState.value.tipoMovimiento == tipo) return
+        _uiState.value = _uiState.value.copy(tipoMovimiento = tipo, categoriaId = null, categorias = emptyList(), errorMovimiento = null)
+        cargarCategorias()
+    }
+
+    fun abrirForm() {
         if (!_uiState.value.esMesActual) return // defensa extra: el mes en pantalla ya cerró
+        // Si se está mirando solo ingresos, lo natural es que el "+" registre un ingreso.
+        val tipo = if (_uiState.value.filtroMovimientos == TiposMovimientoCaja.INGRESO) TiposMovimientoCaja.INGRESO else TiposMovimientoCaja.EGRESO
         _uiState.value = _uiState.value.copy(
-            mostrarForm = true,
             tipoMovimiento = tipo,
+            categoriaId = null,
+            mostrarForm = true,
             montoMovimiento = "",
             descripcionMovimiento = "",
             errorMovimiento = null,
         )
+        cargarCategorias()
     }
 
     fun cerrarForm() { _uiState.value = _uiState.value.copy(mostrarForm = false) }
@@ -135,19 +249,14 @@ class CajaViewModel(private val cajaRepository: CajaRepository) : ViewModel() {
     fun crearCategoria() {
         val nombre = _uiState.value.nombreNuevaCategoria.trim()
         if (nombre.isBlank()) return
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(creandoCategoria = true)
-            cajaRepository.crearCategoria(nombre)
-                .onSuccess { categoria ->
-                    _uiState.value = _uiState.value.copy(
-                        categorias = _uiState.value.categorias + categoria,
-                        categoriaId = categoria.id,
-                        creandoCategoria = false,
-                        mostrandoNuevaCategoria = false,
-                        nombreNuevaCategoria = "",
-                    )
-                }
-                .onFailure { e -> _uiState.value = _uiState.value.copy(creandoCategoria = false, errorMovimiento = e.message ?: "No se pudo crear la categoría") }
+        cajaRepository.crearCategoria(nombre).onSuccess { categoria ->
+            _uiState.value = _uiState.value.copy(
+                categorias = (_uiState.value.categorias + categoria).distinctBy { it.id },
+                categoriaId = categoria.id,
+                creandoCategoria = false,
+                mostrandoNuevaCategoria = false,
+                nombreNuevaCategoria = "",
+            )
         }
     }
 
@@ -171,40 +280,16 @@ class CajaViewModel(private val cajaRepository: CajaRepository) : ViewModel() {
                     fecha = OffsetDateTime.now().toString(),
                     monto = monto,
                     metodoPago = estado.metodoMovimiento,
-                    categoriaId = if (estado.tipoMovimiento == TiposMovimientoCaja.EGRESO) estado.categoriaId else null,
-                    descripcion = estado.descripcionMovimiento.ifBlank { null },
+                    categoria = estado.categoriaId ?: "Otros",
+                    descripcion = estado.descripcionMovimiento,
                 ),
             )
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(guardandoMovimiento = false, mostrarForm = false)
                     cargar()
+                    cargarTurno() // un ingreso/egreso en efectivo cambia el monto esperado del turno
                 }
                 .onFailure { e -> _uiState.value = _uiState.value.copy(guardandoMovimiento = false, errorMovimiento = e.message ?: "No se pudo registrar") }
-        }
-    }
-
-    fun aprobarGasto(id: String, metodoPago: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(procesandoGastoId = id)
-            cajaRepository.aprobarGasto(id, metodoPago)
-                .onSuccess {
-                    _uiState.value = _uiState.value.copy(procesandoGastoId = null)
-                    cargarGastosPendientes()
-                    cargar()
-                }
-                .onFailure { _uiState.value = _uiState.value.copy(procesandoGastoId = null) }
-        }
-    }
-
-    fun rechazarGasto(id: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(procesandoGastoId = id)
-            cajaRepository.rechazarGasto(id)
-                .onSuccess {
-                    _uiState.value = _uiState.value.copy(procesandoGastoId = null)
-                    cargarGastosPendientes()
-                }
-                .onFailure { _uiState.value = _uiState.value.copy(procesandoGastoId = null) }
         }
     }
 }

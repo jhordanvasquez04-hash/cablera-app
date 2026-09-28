@@ -66,7 +66,7 @@ export class CobranzaService {
       include: {
         zona: true,
         cargos: { where: { estado: { in: ["pendiente", "parcial"] } }, include: { pagos: true } },
-        serviciosContratados: { where: { estado: "activo" } },
+        serviciosContratados: { where: { estado: "activo" }, include: { tipoServicio: true } },
       },
       orderBy: { nombreCompleto: "asc" },
     });
@@ -101,6 +101,48 @@ export class CobranzaService {
       })
       .filter((fila) => fila.deudaTotal > 0.005);
 
+    // Fusión con Keysls: lo que se cobra mes a mes es CADA CONTRATO (ServicioContratado), no el
+    // cliente como bloque — un cliente con 2 contratos puede tener uno al día y otro con deuda.
+    // Misma fuente de datos que `filas` (ya cargada arriba), solo agrupada por servicio en vez
+    // de por cliente.
+    const contratos = clientes
+      .flatMap((cliente) =>
+        cliente.serviciosContratados.map((servicio) => {
+          const cargosDelServicio = cliente.cargos.filter((c) => c.servicioContratadoId === servicio.id);
+          const deudaTotal = cargosDelServicio.reduce((suma, cargo) => {
+            const pagado = cargo.pagos.reduce((s, pago) => s + pago.montoAplicado, 0);
+            return suma + (cargo.montoCorrespondiente - pagado);
+          }, 0);
+          const montoEfectivo = this.descuentosService.calcularMontoEfectivo(servicio.montoBase, descuentosVigentes.get(servicio.id));
+
+          return {
+            servicioContratadoId: servicio.id,
+            clienteId: cliente.id,
+            clienteNombre: cliente.nombreCompleto,
+            dni: cliente.dni,
+            telefono: cliente.telefono,
+            // `numeroContrato` es en realidad el número del CLIENTE (compartido por todos sus
+            // contratos) — `numeroServicio` diferencia cada uno, y `numeroCompleto` es lo que se
+            // muestra ("ZCE-0003-2"). Ver el comentario en ServicioContratado.numero.
+            numeroContrato: cliente.numeroContrato,
+            numeroServicio: servicio.numero,
+            numeroCompleto: `${cliente.numeroContrato}-${servicio.numero ?? "?"}`,
+            zona: { id: cliente.zona.id, nombre: cliente.zona.nombre },
+            tipoServicioId: servicio.tipoServicioId,
+            tipoServicio: servicio.tipoServicio.nombre,
+            montoBase: Number(montoEfectivo.toFixed(2)),
+            suspendido: servicio.estado === "suspendido",
+            mesesPendientes: agruparPeriodosConsecutivos(cargosDelServicio.map((c) => ({ anio: c.anio, mes: c.mes }))),
+            // Fusión con Keysls: cuántos períodos con saldo pendiente tiene este contrato — el
+            // texto de arriba ("Ene-Mar 2026") es para mostrar, este número es para filtrar
+            // (1 mes / 2 meses / 3+ meses) sin tener que parsear el texto.
+            mesesPendientesCount: cargosDelServicio.length,
+            deudaTotal: Number(deudaTotal.toFixed(2)),
+          };
+        }),
+      )
+      .filter((fila) => fila.deudaTotal > 0.005);
+
     const deudaAcumulada = filas.reduce((suma, fila) => suma + fila.deudaTotal, 0);
     const cobradoMes = cobradoMesAgg._sum.montoTotal ?? 0;
     const egresosMes = egresosMesAgg._sum.monto ?? 0;
@@ -114,6 +156,8 @@ export class CobranzaService {
       cobrosHoyPorUsuarioCount: cobrosHoyCount,
       clientesConDeudaCount: filas.length,
       clientes: filas,
+      contratosConDeudaCount: contratos.length,
+      contratos,
     };
   }
 }

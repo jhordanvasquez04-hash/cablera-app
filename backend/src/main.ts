@@ -34,8 +34,18 @@ async function bootstrap() {
       res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     },
   });
+  // Fail-closed: en producción, CORS_ORIGIN es obligatorio (getOrThrow revienta el arranque si
+  // falta) — antes, un despliegue sin esa variable quedaba corriendo en silencio con el default
+  // de desarrollo ("http://localhost:5173"), lo cual en el mejor caso rompe el frontend real y
+  // en el peor esconde una config incompleta hasta que alguien lo nota. En desarrollo local se
+  // mantiene el default de siempre, para no exigir configurar nada extra. Acepta una lista
+  // separada por comas (varios orígenes: la web y, más adelante, cualquier otro cliente propio).
+  const corsOrigin =
+    process.env.NODE_ENV === "production"
+      ? configService.getOrThrow<string>("CORS_ORIGIN")
+      : configService.get<string>("CORS_ORIGIN", "http://localhost:5173");
   app.enableCors({
-    origin: configService.get<string>("CORS_ORIGIN", "http://localhost:5173"),
+    origin: corsOrigin.split(",").map((origen) => origen.trim()),
     exposedHeaders: ["X-Total-Count"],
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

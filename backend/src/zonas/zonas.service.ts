@@ -7,6 +7,10 @@ import type { UpdateZonaDto } from "./dto/update-zona.dto";
 
 // Permite que los métodos usados por la importación participen de la misma
 // transacción interactiva del cliente que los invoque, en vez de abrir la suya propia.
+// Con el esquema ya grande (fusión con Keysls), TypeScript deja de poder unificar los
+// overloads de esta unión en `cliente.modelo.metodo(...)` llamado directamente — cada
+// método que recibe `cliente` lo convierte una vez a Prisma.TransactionClient (ver `tx`
+// más abajo) y llama sobre esa variable en vez de sobre el parámetro.
 type Cliente = ScopedPrismaClient | Prisma.TransactionClient;
 
 @Injectable()
@@ -37,9 +41,8 @@ export class ZonasService {
   }
 
   async crear(dto: CreateZonaDto, empresaId: string, cliente: Cliente = this.prisma) {
-    const codigosExistentes = (await cliente.zona.findMany({ select: { codigo: true } })).map(
-      (zona) => zona.codigo,
-    );
+    const tx = cliente as Prisma.TransactionClient;
+    const codigosExistentes = (await tx.zona.findMany({ select: { codigo: true } })).map((zona) => zona.codigo);
     const codigo = (
       dto.codigo?.trim().toUpperCase() || generarCodigoZona(dto.nombre, codigosExistentes)
     ).toUpperCase();
@@ -48,7 +51,7 @@ export class ZonasService {
       throw new ConflictException(`Ya existe una zona con el código "${codigo}"`);
     }
 
-    return cliente.zona.create({ data: { nombre: dto.nombre.trim(), codigo, empresaId } });
+    return tx.zona.create({ data: { nombre: dto.nombre.trim(), codigo, empresaId } });
   }
 
   async actualizar(id: string, dto: UpdateZonaDto) {
@@ -87,8 +90,9 @@ export class ZonasService {
 
   /** Usado por la importación: reutiliza la zona si ya existe una con el mismo nombre. */
   async obtenerOCrearPorNombre(nombre: string, empresaId: string, cliente: Cliente = this.prisma) {
+    const tx = cliente as Prisma.TransactionClient;
     const nombreLimpio = nombre.trim();
-    const existente = await cliente.zona.findFirst({ where: { nombre: nombreLimpio, empresaId } });
+    const existente = await tx.zona.findFirst({ where: { nombre: nombreLimpio, empresaId } });
     if (existente) {
       return { zona: existente, creada: false };
     }
@@ -97,7 +101,8 @@ export class ZonasService {
 
   /** Incrementa de forma atómica el correlativo de la zona y devuelve el nuevo valor. */
   async incrementarCorrelativo(zonaId: string, cliente: Cliente = this.prisma): Promise<number> {
-    const zona = await cliente.zona.update({
+    const tx = cliente as Prisma.TransactionClient;
+    const zona = await tx.zona.update({
       where: { id: zonaId },
       data: { correlativoActual: { increment: 1 } },
     });

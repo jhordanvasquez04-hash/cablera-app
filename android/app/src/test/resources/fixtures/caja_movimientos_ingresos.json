@@ -1,0 +1,152 @@
+[
+ {
+  "id": "f6b197f9-4fe5-4a65-a53a-e7ce40c6277e",
+  "tipo": "INGRESO",
+  "origen": "EXTERNO",
+  "fecha": "2026-09-25T17:52:09.649Z",
+  "monto": 80,
+  "metodoPago": "YAPE",
+  "categoria": "Venta de equipos",
+  "concepto": "Venta de router usado",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "5db19965-c7b8-47d4-a1af-38af6296b604",
+  "tipo": "INGRESO",
+  "origen": "EXTERNO",
+  "fecha": "2026-09-25T17:52:09.598Z",
+  "monto": 150,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Aporte",
+  "concepto": "Aporte del dueno",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "8120816a-9d3f-4a19-b755-c858af0e61ff",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:37:26.477Z",
+  "monto": 35,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Jose Huaman Torres · 2026-08",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "76abafe0-3c55-4293-9682-c5a577c92dd4",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:20:38.692Z",
+  "monto": 35,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Jose Huaman Torres · 2026-09",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "731f33aa-b375-4ceb-96ae-5412043fc80d",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:05:33.476Z",
+  "monto": 180,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Carmen Villanueva Rojas · 2026-07, 2026-08",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "c8529fee-9314-4f9c-8f92-c2f64714786f",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:04:53.744Z",
+  "monto": 90,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Carmen Villanueva Rojas · 2026-09",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "6ad3f083-36e0-438a-b639-9b2968b2034b",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:00:49.474Z",
+  "monto": 30,
+  "metodoPago": "YAPE",
+  "categoria": "Cobro de cliente",
+  "concepto": "Sandra Moreno Vega · 2026-09",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "c16e51f7-ec7b-45f8-8e84-c568aaae1525",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:00:48.855Z",
+  "monto": 15,
+  "metodoPago": "YAPE",
+  "categoria": "Cobro de cliente",
+  "concepto": "Lucia Cabrera Ochoa · 2026-08",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "6c60168c-b046-4c3f-b552-c110478ebfad",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T16:57:36.393Z",
+  "monto": 35,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Rosa Quispe Huaman · 2026-09",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "2bb19e07-ec83-4276-80c8-41e97292f288",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T16:56:27.831Z",
+  "monto": 60,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Pedro Castillo Vega · 2026-09",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ }
+]

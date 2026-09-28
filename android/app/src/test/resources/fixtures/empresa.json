@@ -1,0 +1,14 @@
+{
+ "id": "b12eac8d-3021-4b00-907b-9ac8d288dbf3",
+ "ruc": "20600000001",
+ "nombre": "Empresa Pruebas",
+ "direccion": "Av. Principal 100",
+ "telefono": "999000111",
+ "agencia": null,
+ "logo": null,
+ "estado": "ACTIVO",
+ "montoMensual": null,
+ "createdAt": "2026-09-25T16:17:00.322Z",
+ "updatedAt": "2026-09-25T16:17:00.322Z",
+ "metodosPago": []
+}

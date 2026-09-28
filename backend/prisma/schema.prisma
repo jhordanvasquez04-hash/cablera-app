@@ -16,6 +16,11 @@ enum Rol {
 enum EstadoEmpresa {
   activa
   suspendida
+  // Fusión con Keysls: además de "suspendida" (decisión manual del proveedor), "morosa" marca
+  // que la empresa no tiene un PagoSuscripcion del mes en curso. Ambas bloquean el acceso igual
+  // (ver auth.service.ts / jwt.strategy.ts / tecnico-auth.*: todos comparan `!== "activa"`, no
+  // solo `=== "suspendida"`, para no tener que acordarse de agregar este estado en cada lugar).
+  morosa
 }
 
 // Tenant: cada empresa de cable que usa la plataforma. `super_admin` es el único rol sin
@@ -27,11 +32,19 @@ model Empresa {
   nombre                           String
   slug                             String        @unique
   estado                           EstadoEmpresa @default(activa)
+  // Datos comerciales del tenant (fusión con Keysls) — el super_admin los usa para facturar la
+  // suscripción, no tienen nada que ver con la operación de la empresa hacia SUS clientes.
+  ruc                              String?
+  direccion                        String?
+  telefono                         String?
+  agencia                          String?
+  montoMensual                     Float?
   // Reemplazan los @default(autoincrement()) de Boleta.numero/ServicioTecnico.folio, que
   // no se pueden particionar por tenant (una secuencia de Postgres es global). Se
   // incrementan transaccionalmente igual que Zona.correlativoActual (ver zonas.service.ts).
   correlativoBoletaActual          Int           @default(0)
   correlativoServicioTecnicoActual Int           @default(0)
+  correlativoOrdenServicioActual   Int           @default(0)
   createdAt                        DateTime      @default(now())
   updatedAt                        DateTime      @updatedAt
 
@@ -50,6 +63,24 @@ model Empresa {
   gastosReportados     GastoReportado[]
   tiposServicioTecnico TipoServicioTecnico[]
   serviciosTecnicos    ServicioTecnico[]
+
+  // ── Fusión con Keysls: red, contratos, órdenes, almacén y SaaS propio ──
+  tecnicos          Tecnico[]
+  secretarios       Secretario[]
+  puntosRed         PuntoRed[]
+  olts              Olt[]
+  onus              Onu[]
+  planes            Plan[]
+  contratos         Contrato[]
+  ordenesServicio   OrdenServicio[]
+  ordenConsumos     OrdenConsumo[]
+  productos         Producto[]
+  productoVariantes ProductoVariante[]
+  movimientosStock  MovimientoStock[]
+  cajaTurnos        CajaTurno[]
+  metodosPago       MetodoPagoEmpresa[]
+  actividades       ActividadLog[]
+  pagosSuscripcion  PagoSuscripcion[]
 
   @@map("empresas")
 }
@@ -78,8 +109,69 @@ model Usuario {
   gastosReportados             GastoReportado[]
   serviciosTecnicosRegistrados ServicioTecnico[]
 
+  // ── Fusión con Keysls (Sistema-de-Gestion-ISP): 2FA + sesiones revocables ──
+  // Reemplaza la caché en memoria de 30s que usaba JwtStrategy para detectar cuentas
+  // desactivadas: con TokenSesion, cerrar sesión o desactivar una cuenta la corta al
+  // instante, sin esperar, y funciona igual aunque el backend corra en varias réplicas
+  // (la caché en memoria no se compartía entre procesos).
+  totpSecret            String?
+  totpSecretPendiente   String?
+  totpHabilitado        Boolean                @default(false)
+  intentosFallidos      Int                    @default(0)
+  bloqueadoHasta        DateTime?
+  codigosRecuperacion   CodigoRecuperacion[]
+  tokensReseteoPassword TokenReseteoPassword[]
+  tokensSesion          TokenSesion[]
+  onusAutorizadas       Onu[]                  @relation("OnuAutorizadaPorUsuario")
+  cajasAbiertas         CajaTurno[]            @relation("CajaAperturas")
+  cajasCerradas         CajaTurno[]            @relation("CajaCierres")
+  secretario            Secretario?
+
   @@index([empresaId])
   @@map("usuarios")
+}
+
+// Códigos de un solo uso para entrar si se pierde el dispositivo con la app de 2FA — se
+// generan (y se muestran UNA sola vez) al activar la verificación en dos pasos.
+model CodigoRecuperacion {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  codigoHash String
+  usado      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([usuarioId])
+  @@map("codigos_recuperacion")
+}
+
+// Token de un solo uso para "olvidé mi contraseña" — vence a la hora, se manda por correo
+// (o se loguea en consola si no hay SMTP configurado, para poder probar el flujo sin uno real).
+model TokenReseteoPassword {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  expiraEn  DateTime
+  usado     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([usuarioId])
+  @@map("tokens_reseteo_password")
+}
+
+// Fila = una sesión con login activo. El JWT por sí solo no se puede revocar; esta tabla
+// es lo que hace que "cerrar sesión" o desactivar una cuenta corten el acceso al instante.
+model TokenSesion {
+  id          String   @id @default(uuid())
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  token       String   @unique
+  dispositivo String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@map("tokens_sesion")
 }
 
 enum FormatoBoleta {
@@ -126,6 +218,10 @@ enum EstadoCargo {
   pendiente
   parcial
   pagado
+  // Fusión con Keysls: dos estados que cablera no distinguía. Ambos cuentan como
+  // "no pendiente" para efectos de deuda (no aparecen en cargosPendientes).
+  anulado
+  exonerado
 }
 
 enum MetodoPago {
@@ -133,6 +229,7 @@ enum MetodoPago {
   yape
   plin
   transferencia
+  tarjeta
 }
 
 enum EstadoBoleta {
@@ -190,6 +287,11 @@ model Cliente {
   dni                  String?
   nombreCompleto       String
   telefono             String?
+  // Fusión con Keysls: campos que ellos ya tenían y cablera no — correo de contacto y
+  // coordenadas del domicilio (el mapa de puntos de red los necesita para ubicar clientes).
+  email                String?
+  latitud              Float?
+  longitud             Float?
   direccion            String?
   zonaId               String
   zona                 Zona                 @relation(fields: [zonaId], references: [id])
@@ -220,6 +322,13 @@ model Cliente {
 // mensual, se puede suspender/dar de baja sin afectar a los demás servicios del cliente).
 model ServicioContratado {
   id                       String         @id @default(uuid())
+  // Fusión con Keysls: el cliente puede tener varios servicios (contratos) — cada uno necesita
+  // su propio número para diferenciarse en listados como Cobranza, aparte del numeroContrato del
+  // Cliente (que en realidad identifica al CLIENTE, no a cada contrato suyo). Correlativo por
+  // cliente, 1-based, asignado una sola vez al crearse — ver clientes.service.ts. Nullable porque
+  // los servicios creados antes de esta migración no lo tienen (se backfillean aparte, ver la
+  // migración); nuevos registros siempre lo traen.
+  numero                   Int?
   clienteId                String
   cliente                  Cliente        @relation(fields: [clienteId], references: [id])
   tipoServicioId           String
@@ -236,6 +345,15 @@ model ServicioContratado {
   updatedAt                DateTime       @updatedAt
   cargos                   CargoMensual[]
   descuentos               Descuento[]
+
+  // Fusión con Keysls: plan de catálogo del que salió este servicio (opcional — montoBase
+  // sigue siendo la fuente de verdad de cuánto se cobra, un plan es solo una plantilla/sugerencia
+  // de precio, así que un descuento o precio negociado no rompe nada aquí) y su ficha técnica de
+  // instalación (IP, PPPoE, punto de red, técnico instalador) en Contrato — separado a propósito
+  // de la facturación para no tocar CargoMensual/Boleta, que ya están en producción con datos reales.
+  planId   String?
+  plan     Plan?     @relation(fields: [planId], references: [id])
+  contrato Contrato?
 
   @@index([empresaId])
   @@index([clienteId])
@@ -274,6 +392,11 @@ model CargoMensual {
   anio                 Int
   mes                  Int
   montoCorrespondiente Float
+  // Fusión con Keysls: descuento puntual sobre ESTE cargo (no sobre el servicio completo, eso
+  // ya existe en Descuento) — ej. "esta vez le cobro 10% menos". `montoOriginal` guarda el
+  // monto sin descuento para poder revertirlo; si es null, el cargo nunca tuvo descuento.
+  montoOriginal        Float?
+  notaDescuento        String?
   estado               EstadoCargo        @default(pendiente)
   empresaId            String
   empresa              Empresa            @relation(fields: [empresaId], references: [id])
@@ -429,4 +552,537 @@ model ServicioTecnico {
 
   @@unique([empresaId, folio])
   @@map("servicios_tecnicos")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FUSIÓN con Sistema-de-Gestion-ISP (Keysls): red de fibra, contratos técnicos,
+// órdenes de servicio, técnicos/secretarios, almacén y el SaaS cobrándose a sí
+// mismo. Todo lo de arriba queda intacto — esto es puramente aditivo, para no
+// arriesgar los datos reales de PARIAS ya en producción.
+//
+// Decisión de diseño clave: Contrato NO repite plata/período (eso ya vive en
+// ServicioContratado/CargoMensual, en producción); es solo la ficha TÉCNICA de
+// instalación (IP, PPPoE, punto de red, técnico, equipo), 1:1 con un
+// ServicioContratado existente.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model Tecnico {
+  id           String   @id @default(uuid())
+  nombre       String
+  apellido     String
+  dni          String
+  telefono     String?
+  // Login propio (portal de campo), separado de Usuario — un técnico no tiene por qué
+  // poder entrar al panel de gestor/cobrador, y viceversa.
+  email        String   @unique
+  passwordHash String
+  zona         String?
+  vehiculo     String?
+  activo       Boolean  @default(true)
+  empresaId    String
+  empresa      Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contratosInstalados Contrato[]
+  ordenesAsignadas    OrdenServicio[]
+  onusAutorizadas     Onu[]           @relation("OnuAutorizadaPorTecnico")
+
+  @@unique([empresaId, dni])
+  @@index([empresaId])
+  @@map("tecnicos")
+}
+
+model Secretario {
+  id        String   @id @default(uuid())
+  nombre    String
+  apellido  String
+  dni       String
+  telefono  String?
+  email     String
+  activo    Boolean  @default(true)
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  // Opcional: si además necesita entrar al panel (no solo aparecer en catálogos), se
+  // le crea un Usuario aparte y se enlaza acá.
+  usuarioId String?  @unique
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([empresaId, dni])
+  @@unique([empresaId, email])
+  @@index([empresaId])
+  @@map("secretarios")
+}
+
+enum TipoPuntoRed {
+  nap
+  cto
+}
+
+enum EstadoPuntoRed {
+  activa
+  saturada
+  mantenimiento
+}
+
+// Topología física de la red de fibra: NAPs (nodos de distribución) y CTOs (cajas hacia
+// el cliente), cada CTO cuelga opcionalmente de una NAP. Independiente de Zona (que es
+// una agrupación administrativa/de cobranza, no la ubicación real de la red).
+model PuntoRed {
+  id        String         @id @default(uuid())
+  tipo      TipoPuntoRed
+  codigo    String
+  latitud   Float
+  longitud  Float
+  capacidad Int?
+  ocupados  Int            @default(0)
+  estado    EstadoPuntoRed @default(activa)
+  direccion String?
+  notas     String?
+  empresaId String
+  empresa   Empresa        @relation(fields: [empresaId], references: [id])
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  napId     String?
+  nap       PuntoRed?  @relation("NapCtos", fields: [napId], references: [id], onDelete: SetNull)
+  ctos      PuntoRed[] @relation("NapCtos")
+  contratos Contrato[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+  @@map("puntos_red")
+}
+
+// Credenciales SSH/Telnet de un equipo OLT — passwordCifrado va cifrado con AES-256 a
+// nivel de aplicación (misma técnica que los backups del panel de superadmin), nunca en
+// texto plano en la base de datos.
+model Olt {
+  id              String   @id @default(uuid())
+  nombre          String
+  ip              String
+  puerto          Int      @default(22)
+  puertoTelnet    Int      @default(23)
+  puertoSnmp      Int      @default(161)
+  comunidadSnmp   String   @default("public")
+  fabricante      String
+  modelo          String
+  usuario         String
+  passwordCifrado String   @db.Text
+  activo          Boolean  @default(true)
+  notas           String?
+  empresaId       String
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  onus Onu[]
+
+  @@unique([empresaId, ip])
+  @@index([empresaId])
+  @@map("olts")
+}
+
+enum EstadoOnu {
+  autorizada
+  fallida
+}
+
+// Historial de intentos de autorización de ONUs hechos desde el panel o el portal del
+// técnico — NO es un espejo en vivo de lo autorizado en el OLT (eso se consulta por SSH
+// cuando se necesita).
+model Onu {
+  id             String    @id @default(uuid())
+  numeroSerie    String
+  onuId          Int
+  puerto         String
+  nombre         String
+  vlan           String
+  perfilServicio String
+  onuType        String
+  estado         EstadoOnu
+  mensajeError   String?
+  oltId          String
+  olt            Olt       @relation(fields: [oltId], references: [id], onDelete: Cascade)
+  contratoId     String?
+  contrato       Contrato? @relation(fields: [contratoId], references: [id])
+
+  ordenServicioId String?
+  ordenServicio   OrdenServicio? @relation(fields: [ordenServicioId], references: [id])
+
+  // Quién ejecutó la autorización — un Usuario (panel) o un Tecnico (portal de campo).
+  autorizadoPorUsuarioId String?
+  autorizadoPorUsuario   Usuario? @relation("OnuAutorizadaPorUsuario", fields: [autorizadoPorUsuarioId], references: [id])
+  autorizadoPorTecnicoId String?
+  autorizadoPorTecnico   Tecnico? @relation("OnuAutorizadaPorTecnico", fields: [autorizadoPorTecnicoId], references: [id])
+
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([oltId])
+  @@index([contratoId])
+  @@index([ordenServicioId])
+  @@index([empresaId])
+  @@map("onus")
+}
+
+enum TipoServicioRed {
+  internet
+  cable
+  duo
+}
+
+// Catálogo de planes con velocidad/precio de referencia. Un ServicioContratado puede
+// opcionalmente venir de un Plan; montoBase en ServicioContratado sigue siendo lo que
+// realmente se cobra (un plan es una plantilla, no la fuente de verdad del cobro).
+model Plan {
+  id           String          @id @default(uuid())
+  nombre       String
+  tipoServicio TipoServicioRed
+  mbps         Int?
+  precio       Float
+  activo       Boolean         @default(true)
+  empresaId    String
+  empresa      Empresa         @relation(fields: [empresaId], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  serviciosContratados ServicioContratado[]
+  ordenes              OrdenServicio[]
+
+  @@index([empresaId])
+  @@map("planes")
+}
+
+enum EstadoContrato {
+  activo
+  suspendido
+  cortado
+  baja
+}
+
+// Ficha TÉCNICA de instalación de un ServicioContratado (1:1) — dirección exacta, datos de
+// red (IP/PPPoE), a qué punto de red cuelga, qué técnico lo instaló y con qué equipo.
+// Separado de la facturación a propósito: no toca CargoMensual/Boleta.
+model Contrato {
+  id                   String             @id @default(uuid())
+  servicioContratadoId String             @unique
+  servicioContratado   ServicioContratado @relation(fields: [servicioContratadoId], references: [id])
+
+  direccion  String?
+  referencia String?
+  sector     String?
+
+  ipWan         String?
+  mascara       String?
+  gateway       String?
+  pppoeUsuario  String?
+  pppoePassword String?
+
+  latitud  Float?
+  longitud Float?
+  precinto String?
+
+  puntoRedId String?
+  puntoRed   PuntoRed? @relation(fields: [puntoRedId], references: [id])
+
+  equipoProductoId String?
+  equipoProducto   Producto? @relation(fields: [equipoProductoId], references: [id])
+  equipoSerie      String?
+
+  tecnicoInstaladorId String?
+  tecnicoInstalador   Tecnico?  @relation(fields: [tecnicoInstaladorId], references: [id])
+  fechaInstalacion    DateTime?
+
+  estado     EstadoContrato @default(activo)
+  motivoBaja String?
+  fechaBaja  DateTime?
+  fechaCorte DateTime?
+
+  // Fusión con Keysls: número de contrato del sistema anterior, solo para la importación
+  // masiva de Excel (contratosApi.importar) — cablera genera su propio numeroCompleto
+  // (Cliente.numeroContrato + ServicioContratado.numero), este es solo el código legado para
+  // no duplicar un contrato si el mismo archivo se importa dos veces. Mismo rol que
+  // Boleta.notasImportacion.
+  codigoImportado String?
+
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ordenes OrdenServicio[]
+  onus    Onu[]
+
+  @@unique([empresaId, ipWan])
+  @@unique([empresaId, pppoeUsuario])
+  @@unique([empresaId, codigoImportado])
+  @@index([puntoRedId])
+  @@index([empresaId])
+  @@map("contratos")
+}
+
+enum EstadoOrdenServicio {
+  pendiente
+  asignada
+  en_proceso
+  completada
+  cancelada
+}
+
+// Simplificado respecto a Keysls: ellos tenían ~40 valores de tipo de orden (uno por cada
+// combinación tipo × servicio Internet/Cable/Dúo); acá el "para qué servicio es" ya vive
+// aparte en tipoServicio, así que el tipo de orden en sí no necesita repetirlo.
+enum TipoOrdenServicio {
+  instalacion
+  alta_servicio
+  averia
+  cambio_domicilio
+  cambio_equipo
+  cambio_plan
+  cambio_titular
+  corte_solicitud
+  corte_deuda
+  reconexion
+  retiro_equipo
+  traslado
+  otro
+}
+
+// Orden de trabajo de campo: instalación, avería, cambio de domicilio, etc. Se asigna a un
+// Tecnico y opcionalmente referencia un Contrato existente (o ninguno, si es una instalación
+// nueva que todavía no tiene contrato).
+model OrdenServicio {
+  id        String @id @default(uuid())
+  nServicio String
+
+  contratoId String?
+  contrato   Contrato? @relation(fields: [contratoId], references: [id])
+
+  tipoOrden    TipoOrdenServicio
+  tipoServicio TipoServicioRed
+  estado       EstadoOrdenServicio @default(pendiente)
+
+  fechaServicio DateTime
+
+  abonado    String
+  dni        String?
+  direccion  String
+  referencia String?
+  sector     String?
+  celular    String?
+
+  observacion String?
+
+  tecnicoId            String?
+  tecnico              Tecnico?  @relation(fields: [tecnicoId], references: [id])
+  fechaAsignacion      DateTime?
+  fechaAceptacion      DateTime?
+  fechaInicio          DateTime?
+  fechaFin             DateTime?
+  tiempoInstalacionMin Int?
+
+  ipWan         String?
+  mascara       String?
+  gateway       String?
+  pppoeUsuario  String?
+  pppoePassword String?
+
+  latitud  Float?
+  longitud Float?
+  precinto String?
+
+  mensualidad Float?
+  mbps        Int?
+  planId      String?
+  plan        Plan?   @relation(fields: [planId], references: [id])
+
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  consumos OrdenConsumo[]
+  onus     Onu[]
+
+  @@unique([empresaId, nServicio])
+  @@index([contratoId])
+  @@index([empresaId])
+  @@map("ordenes_servicio")
+}
+
+// A diferencia de Keysls (Producto.id entero), acá usa uuid como el resto del esquema —
+// no hay una razón real para que este catálogo sea la única tabla con id numérico.
+model Producto {
+  id                String   @id @default(uuid())
+  nombre            String
+  codigo            String?
+  categoria         String?
+  unidad            String?
+  descripcion       String?
+  esMedible         Boolean  @default(false)
+  metrosPorUnidad   Float?
+  metrosDisponibles Float?
+  tieneVariantes    Boolean  @default(false)
+  activo            Boolean  @default(true)
+  stockTotal        Int      @default(0)
+  stockMinimo       Int      @default(0)
+  empresaId         String
+  empresa           Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  variantes   ProductoVariante[]
+  movimientos MovimientoStock[]
+  contratos   Contrato[]
+  consumos    OrdenConsumo[]
+
+  @@index([empresaId])
+  @@map("productos")
+}
+
+enum TipoMovimientoStock {
+  entrada
+  salida
+}
+
+model MovimientoStock {
+  id         String              @id @default(uuid())
+  productoId String
+  producto   Producto            @relation(fields: [productoId], references: [id])
+  tipo       TipoMovimientoStock
+  cantidad   Float
+  proveedor  String?
+  motivo     String?
+  empresaId  String
+  empresa    Empresa             @relation(fields: [empresaId], references: [id])
+  createdAt  DateTime            @default(now())
+
+  @@index([empresaId])
+  @@map("movimientos_stock")
+}
+
+model ProductoVariante {
+  id         String   @id @default(uuid())
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  genero     String?
+  talla      String?
+  codigo     String?
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([empresaId])
+  @@map("producto_variantes")
+}
+
+model OrdenConsumo {
+  id         String        @id @default(uuid())
+  ordenId    String
+  orden      OrdenServicio @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  productoId String
+  producto   Producto      @relation(fields: [productoId], references: [id])
+  cantidad   Float
+  empresaId  String
+  empresa    Empresa       @relation(fields: [empresaId], references: [id])
+  createdAt  DateTime      @default(now())
+
+  @@index([ordenId])
+  @@index([empresaId])
+  @@map("orden_consumos")
+}
+
+enum EstadoCajaTurno {
+  abierta
+  cerrada
+}
+
+// Turno de caja con apertura/cierre y arqueo (esperado vs contado). Completa el modo
+// "apertura_cierre" que Configuracion.modoCaja ya contemplaba desde antes de la fusión,
+// sin tener antes ninguna tabla que lo implementara.
+model CajaTurno {
+  id String @id @default(uuid())
+
+  usuarioAperturaId String
+  usuarioApertura   Usuario  @relation("CajaAperturas", fields: [usuarioAperturaId], references: [id])
+  fechaApertura     DateTime @default(now())
+  montoInicial      Float
+
+  usuarioCierreId String?
+  usuarioCierre   Usuario?  @relation("CajaCierres", fields: [usuarioCierreId], references: [id])
+  fechaCierre     DateTime?
+  montoEsperado   Float?
+  montoContado    Float?
+  diferencia      Float?
+  observacion     String?
+
+  estado    EstadoCajaTurno @default(abierta)
+  empresaId String
+  empresa   Empresa         @relation(fields: [empresaId], references: [id])
+
+  @@index([estado])
+  @@index([empresaId])
+  @@map("caja_turnos")
+}
+
+enum TipoMetodoPagoEmpresa {
+  yape
+  plin
+  cuenta_bancaria
+}
+
+// Cuentas propias de la empresa (no del cliente final) para que sus clientes le paguen —
+// se muestran en boletas/portal de pago, no participan en ningún flujo de cobro interno.
+model MetodoPagoEmpresa {
+  id        String                @id @default(uuid())
+  empresaId String
+  empresa   Empresa               @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo      TipoMetodoPagoEmpresa
+  numero    String
+  banco     String?
+  titular   String?
+  createdAt DateTime              @default(now())
+
+  @@index([empresaId])
+  @@map("metodos_pago_empresa")
+}
+
+// Historial de acciones del super-admin (alta de empresa, cambios de estado, pagos de
+// suscripción registrados) — solo lo ve el super-admin; empresaId es informativo, no un
+// límite de aislamiento (por eso NO se agrega a TENANT_SCOPED_MODELS en tenant-prisma.service.ts).
+model ActividadLog {
+  id        String   @id @default(uuid())
+  accion    String
+  detalle   String?
+  ip        String?
+  empresaId String?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([createdAt])
+  @@map("actividad_log")
+}
+
+// El SaaS cobrándose a sí mismo: historial real de cobros de la suscripción de cada
+// empresa cliente de la plataforma (no confundir con Pago, que es el pago de un cliente
+// FINAL por su servicio de cable/internet). "Al día" = ¿existe un registro con periodo
+// = mes actual?
+model PagoSuscripcion {
+  id        String   @id @default(uuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  monto     Float
+  periodo   String
+  notas     String?
+  fechaPago DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([periodo])
+  @@map("pagos_suscripcion")
 }

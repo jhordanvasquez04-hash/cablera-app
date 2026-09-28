@@ -3,47 +3,44 @@ package com.cablera.app.data.remote.dto
 import kotlinx.serialization.Serializable
 
 object TiposMovimientoCaja {
-    const val EGRESO = "egreso"
     const val INGRESO = "ingreso"
+    const val EGRESO = "egreso"
 }
 
-object EstadosGastoReportado {
-    const val PENDIENTE = "pendiente"
-    const val APROBADO = "aprobado"
-    const val RECHAZADO = "rechazado"
+/** De dónde viene un ingreso: el cobro a un cliente o un ingreso externo (aporte, venta de equipo, ...). */
+object OrigenesMovimiento {
+    const val PAGO = "pago"
+    const val EXTERNO = "externo"
+    const val EGRESO = "egreso"
 }
 
+/** En Keysls la categoría de un egreso es texto libre: `id` y `nombre` son lo mismo. */
 @Serializable
 data class CategoriaEgresoDto(val id: String, val nombre: String)
 
 @Serializable
-data class CreateCategoriaEgresoRequest(val nombre: String)
-
-@Serializable
 data class MovimientoCajaDto(
     val id: String,
-    // El resumen de caja (`egresos` dentro de ResumenCajaDto) no incluye este campo porque ya
-    // filtra solo egresos; el default cubre esa forma sin romper la deserialización.
     val tipo: String = TiposMovimientoCaja.EGRESO,
     val fecha: String,
     val monto: Double,
     val metodoPago: String,
     val categoria: String? = null,
     val descripcion: String? = null,
+    val origen: String = OrigenesMovimiento.EGRESO,
 )
 
-@Serializable
 data class CreateMovimientoRequest(
     val tipo: String,
     val fecha: String,
     val monto: Double,
     val metodoPago: String,
-    val categoriaId: String? = null,
-    val descripcion: String? = null,
+    val categoria: String,
+    val descripcion: String,
 )
 
 @Serializable
-data class MontoPorMetodoDto(val metodo: String, val monto: Double, val cantidadCobros: Int)
+data class MontoPorMetodoDto(val metodo: String, val monto: Double)
 
 @Serializable
 data class ResumenCajaDto(
@@ -53,8 +50,4 @@ data class ResumenCajaDto(
     val ingresosTotal: Double,
     val egresosTotal: Double,
     val neto: Double,
-    val egresos: List<MovimientoCajaDto>,
 )
-
-@Serializable
-data class AprobarGastoRequest(val metodoPago: String)

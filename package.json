@@ -1,10 +1,12 @@
 {
-  "name": "cablera-app",
+  "name": "keysls",
   "private": true,
   "version": "0.1.0",
   "scripts": {
     "dev:backend": "pnpm --filter @cablera/shared build && pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter @cablera/shared build && pnpm --filter frontend dev",
+    "dev:keysls": "npm --prefix frontend-keysls run dev",
+    "build:keysls": "npm --prefix frontend-keysls run build",
     "build": "pnpm --filter @cablera/shared build && pnpm --filter backend build && pnpm --filter frontend build",
     "prisma:migrate": "pnpm --filter backend prisma migrate dev",
     "prisma:seed": "pnpm --filter backend prisma db seed",

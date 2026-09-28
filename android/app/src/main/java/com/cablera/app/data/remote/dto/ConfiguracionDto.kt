@@ -2,60 +2,31 @@ package com.cablera.app.data.remote.dto
 
 import kotlinx.serialization.Serializable
 
-object FormatosBoleta {
-    const val A4 = "a4"
-    const val TICKET = "ticket"
-}
-
 object ModosCaja {
-    const val RESUMEN = "resumen"
+    // Keysls solo maneja caja por turnos (apertura y cierre con arqueo).
     const val APERTURA_CIERRE = "apertura_cierre"
 }
 
+/**
+ * Datos de la empresa de quien tiene sesión (GET /empresa de Keysls). Keysls no guarda colores de
+ * marca: la app usa siempre los suyos, por eso ya no hay colores acá.
+ */
 @Serializable
 data class ConfiguracionDto(
     val id: String,
     val nombreEmpresa: String,
     val ruc: String? = null,
     val logoUrl: String? = null,
-    val colorPrimario: String,
-    val colorSecundario: String,
     val telefonoContacto: String? = null,
-    val emailContacto: String? = null,
     val direccionContacto: String? = null,
-    val fechaFacturacionGlobal: Int,
-    val formatoBoletaDefault: String,
-    val modoCaja: String = ModosCaja.RESUMEN,
+    val agencia: String? = null,
+    val modoCaja: String = ModosCaja.APERTURA_CIERRE,
 )
 
-@Serializable
 data class UpdateConfiguracionRequest(
-    val nombreEmpresa: String? = null,
+    val nombreEmpresa: String,
     val ruc: String? = null,
-    val colorPrimario: String? = null,
-    val colorSecundario: String? = null,
     val telefonoContacto: String? = null,
-    val emailContacto: String? = null,
     val direccionContacto: String? = null,
-    val fechaFacturacionGlobal: Int? = null,
-    val formatoBoletaDefault: String? = null,
-    val modoCaja: String? = null,
-)
-
-@Serializable
-data class UsuarioListadoDto(
-    val id: String,
-    val nombre: String,
-    val email: String,
-    val rol: String,
-    val activo: Boolean = true,
-    val createdAt: String,
-)
-
-@Serializable
-data class CreateUsuarioRequest(
-    val nombre: String,
-    val email: String,
-    val password: String,
-    val rol: String,
+    val agencia: String? = null,
 )

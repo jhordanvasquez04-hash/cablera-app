@@ -1,7 +1,7 @@
 import { IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import type { MetodoPago } from "@prisma/client";
 
-const METODOS_PAGO: MetodoPago[] = ["efectivo", "yape", "plin", "transferencia"];
+const METODOS_PAGO: MetodoPago[] = ["efectivo", "yape", "plin", "transferencia", "tarjeta"]; // + tarjeta (fusión con Keysls)
 
 export class UpdateMovimientoDto {
   @IsOptional()

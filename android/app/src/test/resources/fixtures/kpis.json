@@ -1,0 +1,10 @@
+{
+ "data": {
+  "clientesConDeuda": 15,
+  "deudaTotal": 1334,
+  "recaudadoMes": 570,
+  "contratosActivos": 17,
+  "deudaContratosActivos": 1060,
+  "contratosActivosConDeuda": 11
+ }
+}

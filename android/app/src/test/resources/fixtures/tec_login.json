@@ -1,0 +1,17 @@
+{
+ "token": "token-de-prueba",
+ "tecnico": {
+  "id": "5022f185-bca8-4df4-a111-f61fbee75035",
+  "nombre": "Tomas",
+  "apellido": "Tecnico",
+  "dni": "40000002",
+  "telefono": "911000111",
+  "email": "tecnico@isp.test",
+  "zona": null,
+  "vehiculo": null,
+  "activo": true,
+  "createdAt": "2026-09-25T16:17:22.101Z",
+  "updatedAt": "2026-09-25T16:17:22.101Z",
+  "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3"
+ }
+}

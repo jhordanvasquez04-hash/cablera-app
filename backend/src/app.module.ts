@@ -21,6 +21,18 @@ import { CronModule } from "./cron/cron.module";
 import { ExportacionModule } from "./exportacion/exportacion.module";
 import { TiposServicioTecnicoModule } from "./tipos-servicio-tecnico/tipos-servicio-tecnico.module";
 import { ServiciosTecnicosModule } from "./servicios-tecnicos/servicios-tecnicos.module";
+import { PlanesModule } from "./planes/planes.module";
+import { PuntosRedModule } from "./puntos-red/puntos-red.module";
+import { ContratosModule } from "./contratos/contratos.module";
+import { TecnicosModule } from "./tecnicos/tecnicos.module";
+import { PortalTecnicoModule } from "./portal-tecnico/portal-tecnico.module";
+import { OrdenesServicioModule } from "./ordenes-servicio/ordenes-servicio.module";
+import { AlmacenModule } from "./almacen/almacen.module";
+import { SecretariosModule } from "./secretarios/secretarios.module";
+import { MetodosPagoEmpresaModule } from "./metodos-pago-empresa/metodos-pago-empresa.module";
+import { OltModule } from "./olt/olt.module";
+import { OnusModule } from "./onus/onus.module";
+import { ReniecModule } from "./reniec/reniec.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
 
@@ -46,6 +58,18 @@ import { RolesGuard } from "./auth/guards/roles.guard";
     ExportacionModule,
     TiposServicioTecnicoModule,
     ServiciosTecnicosModule,
+    PlanesModule,
+    PuntosRedModule,
+    ContratosModule,
+    TecnicosModule,
+    PortalTecnicoModule,
+    OrdenesServicioModule,
+    AlmacenModule,
+    SecretariosModule,
+    MetodosPagoEmpresaModule,
+    OltModule,
+    OnusModule,
+    ReniecModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

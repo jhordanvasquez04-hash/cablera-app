@@ -7,6 +7,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import com.cablera.app.data.remote.dto.EstadosBoleta
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -97,7 +102,6 @@ fun BoletaDetalleScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var mostrarConfirmacion by remember { mutableStateOf(false) }
     var procesandoAccion by remember { mutableStateOf(false) }
 
     // El ticket se "graba" en esta capa en cada dibujo (ver TicketCard más abajo); al compartir o
@@ -111,7 +115,7 @@ fun BoletaDetalleScreen(
     Scaffold(
         topBar = {
             AppHeader(
-                titulo = "Boleta",
+                titulo = "Comprobante",
                 onBack = { navController.popBackStack() },
                 actions = {
                     val boleta = (uiState.boleta as? UiState.Success)?.data
@@ -149,37 +153,54 @@ fun BoletaDetalleScreen(
         StateContent(state = uiState.boleta, onRetry = viewModel::cargar, modifier = Modifier.padding(padding)) { boleta ->
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 item { TicketCard(boleta = boleta, graphicsLayer = graphicsLayer) }
-                if (uiState.rolGestor && boleta.estado == "emitida") {
+                if (boleta.estado == EstadosBoleta.ANULADA) {
                     item {
-                        OutlinedButton(
-                            onClick = { mostrarConfirmacion = true },
-                            enabled = !uiState.anulando,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(if (uiState.anulando) "Anulando..." else "Anular boleta")
+                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer), modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text("Pago anulado", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.error)
+                                if (!boleta.motivoAnulacion.isNullOrBlank()) Text("Motivo: ${boleta.motivoAnulacion}", style = MaterialTheme.typography.bodyMedium)
+                                boleta.fechaAnulacion?.let { Text(formatFechaHora(it), style = MaterialTheme.typography.bodySmall) }
+                                Text("Su monto volvió a la deuda del cliente.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+                            }
                         }
                     }
                 }
-                if (uiState.errorAnular != null) {
-                    item { Text(uiState.errorAnular ?: "", color = MaterialTheme.colorScheme.error) }
+                if (uiState.rolGestor && boleta.estado == EstadosBoleta.EMITIDA) {
+                    item {
+                        OutlinedButton(
+                            onClick = viewModel::abrirAnular,
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                        ) { Text("Anular pago") }
+                    }
                 }
             }
         }
     }
 
-    if (mostrarConfirmacion) {
+    if (uiState.mostrarAnular) {
         AlertDialog(
-            onDismissRequest = { mostrarConfirmacion = false },
-            title = { Text("¿Anular esta boleta?", style = MaterialTheme.typography.titleLarge) },
-            text = { Text("El saldo de sus cargos volverá a quedar pendiente. Esta acción no se puede deshacer.") },
-            confirmButton = {
-                TextButton(onClick = { mostrarConfirmacion = false; viewModel.anular() }) {
-                    Text("Anular", color = MaterialTheme.colorScheme.error)
+            onDismissRequest = viewModel::cerrarAnular,
+            title = { Text("Anular este pago") },
+            text = {
+                Column {
+                    Text("El pago no se borra: queda en el historial como anulado y su monto vuelve a ser deuda del cliente. No se puede deshacer.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = uiState.motivoAnulacion,
+                        onValueChange = viewModel::onMotivoAnulacionChange,
+                        label = { Text("Motivo") },
+                        placeholder = { Text("Ej. cobro registrado por error") },
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    )
+                    if (uiState.errorAnular != null) Text(uiState.errorAnular ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
                 }
             },
-            dismissButton = {
-                TextButton(onClick = { mostrarConfirmacion = false }) { Text("Cancelar") }
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmarAnular, enabled = !uiState.anulando) {
+                    Text(if (uiState.anulando) "Anulando..." else "Anular pago", color = MaterialTheme.colorScheme.error)
+                }
             },
+            dismissButton = { TextButton(onClick = viewModel::cerrarAnular) { Text("Volver") } },
         )
     }
 }
@@ -204,7 +225,7 @@ private suspend fun ejecutarConBitmap(context: Context, graphicsLayer: GraphicsL
  * que se encarga de escalar la imagen al papel de destino. */
 private fun imprimirBoleta(context: Context, folio: String, bitmap: Bitmap) {
     val printHelper = PrintHelper(context).apply { scaleMode = PrintHelper.SCALE_MODE_FIT }
-    printHelper.printBitmap("Boleta $folio", bitmap)
+    printHelper.printBitmap("Comprobante $folio", bitmap)
 }
 
 private fun compartirBoleta(context: Context, folio: String, bitmap: Bitmap) {
@@ -214,7 +235,7 @@ private fun compartirBoleta(context: Context, folio: String, bitmap: Bitmap) {
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(intent, "Compartir boleta"))
+    context.startActivity(Intent.createChooser(intent, "Compartir comprobante"))
 }
 
 private fun guardarBitmapTemporal(context: Context, folio: String, bitmap: Bitmap): android.net.Uri {
@@ -254,7 +275,7 @@ private fun TicketCard(boleta: BoletaDetalleDto, graphicsLayer: GraphicsLayer) {
 
             Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Column {
-                    Text("BOLETA", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                    Text("COMPROBANTE DE PAGO", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
                     Text(boleta.folio, style = MonoStyles.Title, color = Ink)
                 }
                 EstadoChip(texto = boleta.estado, colores = coloresEstadoBoleta(boleta.estado))
@@ -270,7 +291,7 @@ private fun TicketCard(boleta: BoletaDetalleDto, graphicsLayer: GraphicsLayer) {
 
             Text(boleta.cliente.nombreCompleto.uppercase(), style = MaterialTheme.typography.titleMedium, color = Ink)
             Text(
-                "DNI ${boleta.dni ?: "—"} · ${boleta.cliente.zona}".uppercase(),
+                "DNI ${boleta.dni ?: "—"}${boleta.cliente.telefono?.let { " · TEL $it" } ?: ""}".uppercase(),
                 style = MonoStyles.Body,
                 color = TextSecondary,
             )
@@ -333,7 +354,7 @@ private fun TicketCard(boleta: BoletaDetalleDto, graphicsLayer: GraphicsLayer) {
 @Composable
 private fun EncabezadoEmpresa(configuracion: ConfiguracionDto?) {
     val container = LocalAppContainer.current
-    val nombreEmpresa = configuracion?.nombreEmpresa?.takeIf { it.isNotBlank() } ?: "Cablera"
+    val nombreEmpresa = configuracion?.nombreEmpresa?.takeIf { it.isNotBlank() } ?: "Mi empresa"
     val logoUrl = container.resolverUrlArchivo(configuracion?.logoUrl)
 
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {

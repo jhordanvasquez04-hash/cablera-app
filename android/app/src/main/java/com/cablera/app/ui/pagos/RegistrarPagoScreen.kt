@@ -47,11 +47,12 @@ fun RegistrarPagoScreen(
     navController: NavHostController,
     clienteId: String,
     onPagoRegistrado: (String) -> Unit,
+    contratoIdFiltro: String? = null,
     viewModel: RegistrarPagoViewModel = run {
         val container = LocalAppContainer.current
         viewModel(
             factory = LambdaViewModelFactory {
-                RegistrarPagoViewModel(clienteId, container.clientesRepository, container.boletasRepository)
+                RegistrarPagoViewModel(clienteId, contratoIdFiltro, container.clientesRepository, container.boletasRepository)
             },
         )
     },
@@ -59,7 +60,7 @@ fun RegistrarPagoScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { AppHeader(titulo = "Registrar pago", onBack = { navController.popBackStack() }) },
+        topBar = { AppHeader(titulo = if (contratoIdFiltro != null) "Cobrar contrato" else "Registrar pago", onBack = { navController.popBackStack() }) },
     ) { padding ->
         when {
             uiState.cargando -> LoadingBox(modifier = Modifier.padding(padding))
@@ -72,7 +73,15 @@ fun RegistrarPagoScreen(
                 item {
                     uiState.cliente?.let { cliente ->
                         Text(cliente.nombreCompleto, style = MaterialTheme.typography.titleLarge)
-                        Text("DNI ${cliente.dni ?: "—"} · ${cliente.zona.nombre}", style = MaterialTheme.typography.bodySmall)
+                        val contrato = cliente.contratos.find { it.id == contratoIdFiltro }
+                        Text(
+                            if (contrato != null) {
+                                "Contrato ${contrato.numero} · ${contrato.tipoServicio.replaceFirstChar(Char::uppercase)}"
+                            } else {
+                                "DNI ${cliente.dni ?: "—"}"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                        )
                     }
                 }
 
@@ -138,7 +147,7 @@ fun RegistrarPagoScreen(
                                 enabled = !uiState.enviando && uiState.seleccionados.isNotEmpty(),
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Text(if (uiState.enviando) "Registrando..." else "Registrar y emitir boleta")
+                                Text(if (uiState.enviando) "Registrando..." else "Registrar pago")
                             }
                             OutlinedButton(
                                 onClick = { viewModel.registrar { navController.popBackStack() } },
@@ -173,7 +182,7 @@ private fun CargoSeleccionableRow(cargo: CargoPendienteDto, seleccionado: Boolea
                     Text("${nombreMes(cargo.mes)} ${cargo.anio}", style = MaterialTheme.typography.bodyMedium)
                     if (cargo.tipoServicio != null) {
                         Text(
-                            cargo.tipoServicio.nombre.replaceFirstChar(Char::uppercase),
+                            "${cargo.tipoServicio.replaceFirstChar(Char::uppercase)}${cargo.numeroContrato?.let { " · $it" } ?: ""}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

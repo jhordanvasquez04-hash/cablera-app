@@ -12,6 +12,12 @@ import { BoletaDetallePage } from "./pages/BoletaDetallePage";
 import { CajaPage } from "./pages/CajaPage";
 import { ConfiguracionPage } from "./pages/ConfiguracionPage";
 import { ZonasPage } from "./pages/ZonasPage";
+import { PlanesPage } from "./pages/PlanesPage";
+import { PuntosRedPage } from "./pages/PuntosRedPage";
+import { ContratosPage } from "./pages/ContratosPage";
+import { TecnicosPage } from "./pages/TecnicosPage";
+import { OrdenesServicioPage } from "./pages/OrdenesServicioPage";
+import { AlmacenPage } from "./pages/AlmacenPage";
 import { ClientesPage } from "./pages/ClientesPage";
 import { ClienteFichaPage } from "./pages/ClienteFichaPage";
 import { ImportacionPage } from "./pages/ImportacionPage";
@@ -50,6 +56,12 @@ export function App() {
                   <Route path="/caja" element={<CajaPage />} />
                   <Route path="/configuracion" element={<ConfiguracionPage />} />
                   <Route path="/zonas" element={<ZonasPage />} />
+                  <Route path="/planes" element={<PlanesPage />} />
+                  <Route path="/puntos-red" element={<PuntosRedPage />} />
+                  <Route path="/contratos" element={<ContratosPage />} />
+                  <Route path="/tecnicos" element={<TecnicosPage />} />
+                  <Route path="/ordenes-servicio" element={<OrdenesServicioPage />} />
+                  <Route path="/almacen" element={<AlmacenPage />} />
                   <Route path="/importar" element={<ImportacionPage />} />
                 </Route>
               </Route>

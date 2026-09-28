@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #1f3a63;
-  --color-secondary: #8f2c22;
+  /* Default = el azul marino de Keysls (antes #1f3a63, ya bastante parecido). El MECANISMO de
+     marca blanca por empresa (Configuracion.colorPrimario/colorSecundario) se mantiene intacto
+     a propósito — no se tocó ni se eliminó esa función, solo cambió el color por defecto y el
+     resto del lenguaje visual (fuente, radios, paleta) para que coincida con Keysls. */
+  --color-primary: #1e3a8a;
+  --color-secondary: #dc2626;
   /* Derivados en vivo del color que elija el gestor en Configuración, para que
      estados hover/activos combinen con cualquier color primario, no solo el navy por defecto. */
   --color-primary-hover: color-mix(in srgb, var(--color-primary) 82%, black);
@@ -13,9 +17,27 @@
 }
 
 body {
-  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  background-color: #f4f5f7;
+  background-color: #f0f4f8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Patrón de Keysls: tablas de datos se convierten en tarjetas apiladas en pantallas chicas, en
+   vez de un scroll horizontal ilegible. Se activa con className="resp-table" / "resp-cards" en
+   los componentes de tabla (ver PlanesPage.tsx como referencia del patrón). */
+@media (max-width: 900px) {
+  .resp-table {
+    display: none !important;
+  }
+  .resp-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+.resp-cards {
+  display: none;
 }
 
 @media print {

@@ -1,6 +1,5 @@
 package com.cablera.app.ui.clientes
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,27 +7,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Card
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.cablera.app.ui.common.ClienteExistenteDialog
 import com.cablera.app.LocalAppContainer
 import com.cablera.app.ui.common.AppHeader
 import com.cablera.app.ui.common.LambdaViewModelFactory
@@ -41,7 +36,7 @@ fun ClienteNuevoScreen(
         val container = LocalAppContainer.current
         viewModel(
             factory = LambdaViewModelFactory {
-                ClienteNuevoViewModel(container.clientesRepository, container.zonasRepository, container.configuracionRepository)
+                ClienteNuevoViewModel(container.clientesRepository)
             },
         )
     },
@@ -56,16 +51,32 @@ fun ClienteNuevoScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(13.dp),
         ) {
+            item { SeccionLabel("Identificación") }
             item {
                 OutlinedTextField(
                     value = uiState.dni,
                     onValueChange = viewModel::onDniChange,
-                    label = { Text("DNI") },
+                    label = { Text("DNI / RUC") },
+                    placeholder = { Text("8 u 11 dígitos") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            item {
+                OutlinedTextField(
+                    value = uiState.telefono,
+                    onValueChange = viewModel::onTelefonoChange,
+                    label = { Text("Teléfono") },
+                    placeholder = { Text("999 999 999") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
+            item { SeccionLabel("Datos personales") }
             item {
                 OutlinedTextField(
                     value = uiState.nombreCompleto,
@@ -75,13 +86,17 @@ fun ClienteNuevoScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
+            item { SeccionLabel("Contacto") }
             item {
                 OutlinedTextField(
-                    value = uiState.telefono,
-                    onValueChange = viewModel::onTelefonoChange,
-                    label = { Text("Teléfono") },
+                    value = uiState.email,
+                    onValueChange = viewModel::onEmailChange,
+                    label = { Text("Email") },
+                    placeholder = { Text("cliente@correo.com") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -89,67 +104,36 @@ fun ClienteNuevoScreen(
                 OutlinedTextField(
                     value = uiState.direccion,
                     onValueChange = viewModel::onDireccionChange,
-                    label = { Text("Dirección / referencia") },
+                    label = { Text("Dirección") },
+                    placeholder = { Text("Dirección completa") },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
+            item { SeccionLabel("Ubicación (opcional)") }
             item {
-                Column {
-                    Text("Caserío", style = MaterialTheme.typography.labelSmall)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                        uiState.zonas.forEach { zona ->
-                            FilterChip(selected = uiState.zonaId == zona.id, onClick = { viewModel.onZonaChange(zona.id) }, label = { Text(zona.nombre) })
-                        }
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = uiState.latitud,
+                        onValueChange = viewModel::onLatitudChange,
+                        label = { Text("Latitud") },
+                        placeholder = { Text("-8.0834") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = uiState.longitud,
+                        onValueChange = viewModel::onLongitudChange,
+                        label = { Text("Longitud") },
+                        placeholder = { Text("-78.9557") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
-            item { Text("Servicios contratados", style = MaterialTheme.typography.titleMedium) }
-            itemsIndexed(uiState.servicios) { index, fila ->
-                Card(border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), shape = RoundedCornerShape(12.dp)) {
-                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Text("Servicio ${index + 1}", style = MaterialTheme.typography.labelLarge)
-                            if (uiState.servicios.size > 1) {
-                                TextButton(onClick = { viewModel.quitarServicio(index) }) { Text("Quitar") }
-                            }
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            uiState.tipos.forEach { tipo ->
-                                FilterChip(
-                                    selected = fila.tipoServicioId == tipo.id,
-                                    onClick = { viewModel.onServicioTipoChange(index, tipo.id) },
-                                    label = { Text(tipo.nombre.replaceFirstChar(Char::uppercase)) },
-                                )
-                            }
-                        }
-                        OutlinedTextField(
-                            value = fila.montoBase,
-                            onValueChange = { viewModel.onServicioMontoChange(index, it) },
-                            label = { Text("Monto base mensual (S/)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                            Text("Fecha de facturación propia", style = MaterialTheme.typography.bodyMedium)
-                            Switch(checked = fila.facturacionPropia, onCheckedChange = { viewModel.onServicioFacturacionPropiaChange(index, it) })
-                        }
-                        if (fila.facturacionPropia) {
-                            OutlinedTextField(
-                                value = fila.diaFacturacion,
-                                onValueChange = { viewModel.onServicioDiaChange(index, it) },
-                                label = { Text("Día del mes (1-28)") },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                    }
-                }
-            }
-            item {
-                TextButton(onClick = viewModel::agregarServicio) { Text("+ Agregar otro servicio") }
-            }
+
             if (uiState.error != null) {
                 item { Text(uiState.error ?: "", color = MaterialTheme.colorScheme.error) }
             }
@@ -157,7 +141,11 @@ fun ClienteNuevoScreen(
                 Button(
                     onClick = {
                         viewModel.guardar { clienteId ->
-                            navController.navigate(Routes.clienteFicha(clienteId)) {
+                            // Encadenado a propósito: recién creado el cliente, lo más común es
+                            // que se le vaya a crear su primer contrato ahí mismo — se reutiliza
+                            // la misma pantalla de "Nuevo contrato" (ver Contratos), ya con este
+                            // cliente fijo, para no tener que volver a buscarlo.
+                            navController.navigate(Routes.contratoNuevoParaCliente(clienteId)) {
                                 popUpTo(Routes.HOME)
                             }
                         }
@@ -170,4 +158,23 @@ fun ClienteNuevoScreen(
             }
         }
     }
+
+    // DNI/RUC ya registrado: no se crea otro cliente; se ofrece crearle un contrato al que ya existe.
+    uiState.duplicado?.let { existente ->
+        ClienteExistenteDialog(
+            existente = existente,
+            pregunta = "¿Quieres crearle un contrato?",
+            textoConfirmar = "Crear contrato",
+            onConfirmar = {
+                viewModel.cerrarDuplicado()
+                navController.navigate(Routes.contratoNuevoParaCliente(existente.id)) { popUpTo(Routes.HOME) }
+            },
+            onCancelar = viewModel::cerrarDuplicado,
+        )
+    }
+}
+
+@Composable
+private fun SeccionLabel(texto: String) {
+    Text(texto, style = MaterialTheme.typography.titleMedium)
 }

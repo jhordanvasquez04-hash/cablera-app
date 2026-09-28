@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -29,6 +30,7 @@ import com.cablera.app.data.remote.dto.BoletaResumenDto
 import com.cablera.app.ui.common.AppHeader
 import com.cablera.app.ui.common.EmptyState
 import com.cablera.app.ui.common.EstadoChip
+import com.cablera.app.ui.common.pieDeLista
 import com.cablera.app.ui.common.HeaderSearchField
 import com.cablera.app.ui.common.LambdaViewModelFactory
 import com.cablera.app.ui.common.StateContent
@@ -59,10 +61,10 @@ fun BoletasListScreen(
     Scaffold(
         topBar = {
             AppHeader(
-                titulo = "Boletas",
+                titulo = "Pagos",
                 onBack = onBack,
                 contenidoExtra = {
-                    HeaderSearchField(value = uiState.busqueda, onValueChange = viewModel::onBusquedaChange, placeholder = "Buscar por folio o cliente")
+                    HeaderSearchField(value = uiState.busqueda, onValueChange = viewModel::onBusquedaChange, placeholder = "Buscar por cliente, DNI o contrato")
                 },
             )
         },
@@ -71,11 +73,12 @@ fun BoletasListScreen(
             StateContent(state = uiState.boletas, onRetry = viewModel::cargar) { boletas ->
                 LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (boletas.isEmpty()) {
-                        item { EmptyState(mensaje = "No hay boletas registradas.", icon = Icons.AutoMirrored.Filled.ReceiptLong) }
+                        item { EmptyState(mensaje = "No hay pagos registrados.", icon = Icons.AutoMirrored.Filled.ReceiptLong) }
                     }
                     items(boletas, key = { it.id }) { boleta ->
                         BoletaRow(boleta = boleta, onClick = { onVerBoleta(boleta.id) })
                     }
+                    pieDeLista(hayMas = uiState.hayMas, cargandoMas = uiState.cargandoMas, onVerMas = viewModel::verMas)
                 }
             }
         }
@@ -91,9 +94,9 @@ private fun BoletaRow(boleta: BoletaResumenDto, onClick: () -> Unit) {
                 Text(formatFechaCorta(boleta.fecha), style = MaterialTheme.typography.bodySmall)
             }
             Text(boleta.cliente.nombreCompleto, style = MaterialTheme.typography.bodyMedium)
-            Text("${boleta.cliente.zona} · ${boleta.concepto}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${boleta.cliente.dni ?: "sin DNI"} · ${boleta.concepto}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                Text(formatMoney(boleta.montoTotal), style = MonoStyles.Body)
+                Text(formatMoney(boleta.montoTotal), style = MonoStyles.Body, textDecoration = if (boleta.estado == "anulada") TextDecoration.LineThrough else TextDecoration.None)
                 EstadoChip(texto = boleta.estado, colores = coloresEstadoBoleta(boleta.estado))
             }
         }

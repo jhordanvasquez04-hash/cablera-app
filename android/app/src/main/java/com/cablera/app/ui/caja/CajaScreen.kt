@@ -1,11 +1,14 @@
 package com.cablera.app.ui.caja
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +19,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,13 +47,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.cablera.app.LocalAppContainer
-import com.cablera.app.data.remote.dto.GastoReportadoDto
+import com.cablera.app.data.remote.dto.CajaTurnoDto
+import com.cablera.app.data.remote.dto.EstadosCajaTurno
 import com.cablera.app.data.remote.dto.MetodosPago
+import com.cablera.app.data.remote.dto.ModosCaja
 import com.cablera.app.data.remote.dto.MontoPorMetodoDto
 import com.cablera.app.data.remote.dto.MovimientoCajaDto
+import com.cablera.app.data.remote.dto.OrigenesMovimiento
 import com.cablera.app.data.remote.dto.TiposMovimientoCaja
 import com.cablera.app.ui.common.AppHeader
 import com.cablera.app.ui.common.EmptyState
+import com.cablera.app.ui.common.pieDeLista
 import com.cablera.app.ui.common.LambdaViewModelFactory
 import com.cablera.app.ui.common.StateContent
 import com.cablera.app.ui.common.UiState
@@ -66,16 +75,31 @@ fun CajaScreen(
     navController: NavHostController,
     viewModel: CajaViewModel = run {
         val container = LocalAppContainer.current
-        viewModel(factory = LambdaViewModelFactory { CajaViewModel(container.cajaRepository) })
+        viewModel(factory = LambdaViewModelFactory { CajaViewModel(container.cajaRepository, container.cajaTurnoRepository) })
     },
 ) {
+    val container = LocalAppContainer.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { AppHeader(titulo = "Caja y egresos") },
+        topBar = { AppHeader(titulo = "Caja") },
         bottomBar = { CableraBottomBar(navController) },
+        floatingActionButton = {
+            // Solo en el mes en curso: registrar siempre usa la fecha de hoy.
+            if (uiState.esMesActual) {
+                FloatingActionButton(onClick = viewModel::abrirForm) {
+                    Icon(Icons.Filled.Add, contentDescription = "Registrar ingreso o egreso")
+                }
+            }
+        },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
+            TurnoCajaSection(
+                turno = uiState.turnoActual,
+                cargando = uiState.cargandoTurno,
+                onAbrir = viewModel::abrirFormAbrirTurno,
+                onCerrar = viewModel::abrirFormCerrarTurno,
+            )
             SelectorDeMes(
                 mes = uiState.mesSeleccionado,
                 puedeAvanzar = uiState.puedeAvanzarMes,
@@ -83,7 +107,7 @@ fun CajaScreen(
                 onSiguiente = viewModel::mesSiguiente,
             )
             StateContent(state = uiState.resumen, onRetry = viewModel::cargar) { resumen ->
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     item {
                         Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
                             val onHero = MaterialTheme.colorScheme.onPrimary
@@ -101,29 +125,7 @@ fun CajaScreen(
                             }
                         }
                     }
-                    if (uiState.esMesActual) {
-                        item {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { viewModel.abrirForm(TiposMovimientoCaja.EGRESO) }, modifier = Modifier.weight(1f)) {
-                                    Text("Registrar egreso")
-                                }
-                                OutlinedButton(onClick = { viewModel.abrirForm(TiposMovimientoCaja.INGRESO) }, modifier = Modifier.weight(1f)) {
-                                    Text("Registrar ingreso")
-                                }
-                            }
-                        }
-                        if (uiState.gastosPendientes.isNotEmpty()) {
-                            item { Text("Gastos reportados por cobradores", style = MaterialTheme.typography.titleMedium) }
-                            items(uiState.gastosPendientes, key = { it.id }) { gasto ->
-                                GastoPendienteRow(
-                                    gasto = gasto,
-                                    procesando = uiState.procesandoGastoId == gasto.id,
-                                    onAprobar = { viewModel.aprobarGasto(gasto.id, MetodosPago.EFECTIVO) },
-                                    onRechazar = { viewModel.rechazarGasto(gasto.id) },
-                                )
-                            }
-                        }
-                    } else {
+                    if (!uiState.esMesActual) {
                         item {
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                                 Text(
@@ -139,6 +141,24 @@ fun CajaScreen(
                     items(resumen.porMetodo) { fila -> MetodoRow(fila) }
 
                     item { Text("Movimientos del mes", style = MaterialTheme.typography.titleMedium) }
+                    item {
+                        // Dos botones grandes, del mismo tamaño y de todo el ancho: tocar uno filtra; tocarlo de
+                        // nuevo vuelve a mostrar todos los movimientos.
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                            BotonFiltroMovimientos(
+                                texto = "Ingresos",
+                                seleccionado = uiState.filtroMovimientos == TiposMovimientoCaja.INGRESO,
+                                onClick = { viewModel.onFiltroMovimientosChange(TiposMovimientoCaja.INGRESO) },
+                                modifier = Modifier.weight(1f),
+                            )
+                            BotonFiltroMovimientos(
+                                texto = "Egresos",
+                                seleccionado = uiState.filtroMovimientos == TiposMovimientoCaja.EGRESO,
+                                onClick = { viewModel.onFiltroMovimientosChange(TiposMovimientoCaja.EGRESO) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
                     when (val movimientos = uiState.movimientos) {
                         is UiState.Loading -> item {
                             Row(modifier = Modifier.fillMaxWidth().padding(24.dp), horizontalArrangement = Arrangement.Center) {
@@ -150,9 +170,10 @@ fun CajaScreen(
                         }
                         is UiState.Success -> {
                             if (movimientos.data.isEmpty()) {
-                                item { EmptyState(mensaje = "No hay movimientos registrados en este mes.") }
+                                item { EmptyState(mensaje = "No hay movimientos con este filtro en este mes.") }
                             }
                             items(movimientos.data, key = { it.id }) { movimiento -> MovimientoRow(movimiento) }
+                            pieDeLista(hayMas = uiState.hayMasMovimientos, cargandoMas = uiState.cargandoMasMovimientos, onVerMas = viewModel::verMasMovimientos)
                         }
                     }
                 }
@@ -161,8 +182,127 @@ fun CajaScreen(
     }
 
     if (uiState.mostrarForm) {
-        ModalBottomSheet(onDismissRequest = viewModel::cerrarForm, sheetState = rememberModalBottomSheetState()) {
+        ModalBottomSheet(onDismissRequest = viewModel::cerrarForm, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             FormMovimientoSheet(uiState = uiState, viewModel = viewModel)
+        }
+    }
+
+    if (uiState.mostrarAbrirTurno) {
+        ModalBottomSheet(onDismissRequest = viewModel::cerrarFormAbrirTurno, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            AbrirTurnoSheet(uiState = uiState, viewModel = viewModel)
+        }
+    }
+
+    if (uiState.mostrarCerrarTurno) {
+        ModalBottomSheet(onDismissRequest = viewModel::cerrarFormCerrarTurno, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            CerrarTurnoSheet(uiState = uiState, viewModel = viewModel)
+        }
+    }
+}
+
+// Apertura/cierre de turno con arqueo: en Keysls es la única forma de manejar la caja. Los cobros en
+// efectivo exigen un turno abierto.
+@Composable
+private fun TurnoCajaSection(turno: CajaTurnoDto?, cargando: Boolean, onAbrir: () -> Unit, onCerrar: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        if (cargando) {
+            Row(modifier = Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+            }
+        } else if (turno == null || turno.estado != EstadosCajaTurno.ABIERTA) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("No hay ningún turno de caja abierto", style = MaterialTheme.typography.bodyMedium)
+                Button(onClick = onAbrir) { Text("Abrir turno") }
+            }
+        } else {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Column {
+                        Text("Turno abierto", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Monto inicial: ${formatMoney(turno.montoInicial)}", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    OutlinedButton(onClick = onCerrar) { Text("Cerrar turno") }
+                }
+                Text(
+                    "Abierto por ${turno.usuarioApertura.nombre} · ${formatFechaHora(turno.fechaApertura)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AbrirTurnoSheet(uiState: CajaUiState, viewModel: CajaViewModel) {
+    Column(modifier = Modifier.imePadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
+        Text("Abrir turno de caja", style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Ingresa cuánto efectivo hay en caja al empezar el turno.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        OutlinedTextField(
+            value = uiState.montoAperturaTurno,
+            onValueChange = viewModel::onMontoAperturaChange,
+            label = { Text("Monto inicial (S/)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+        )
+        if (uiState.errorAbrirTurno != null) {
+            Text(uiState.errorAbrirTurno, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+            TextButton(onClick = viewModel::cerrarFormAbrirTurno) { Text("Cancelar") }
+            Button(onClick = viewModel::confirmarAbrirTurno, enabled = !uiState.guardandoAbrirTurno) {
+                Text(if (uiState.guardandoAbrirTurno) "Abriendo..." else "Abrir turno")
+            }
+        }
+    }
+}
+
+@Composable
+private fun CerrarTurnoSheet(uiState: CajaUiState, viewModel: CajaViewModel) {
+    Column(modifier = Modifier.imePadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
+        Text("Cerrar turno de caja", style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Cuenta el efectivo real en caja para hacer el arqueo.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        OutlinedTextField(
+            value = uiState.montoContadoTurno,
+            onValueChange = viewModel::onMontoContadoChange,
+            label = { Text("Efectivo contado (S/)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+        )
+        OutlinedTextField(
+            value = uiState.observacionCierreTurno,
+            onValueChange = viewModel::onObservacionCierreChange,
+            label = { Text("Observación (opcional)") },
+            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        )
+        if (uiState.errorCerrarTurno != null) {
+            Text(uiState.errorCerrarTurno, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+            TextButton(onClick = viewModel::cerrarFormCerrarTurno) { Text("Cancelar") }
+            Button(onClick = viewModel::confirmarCerrarTurno, enabled = !uiState.guardandoCerrarTurno) {
+                Text(if (uiState.guardandoCerrarTurno) "Cerrando..." else "Cerrar turno")
+            }
         }
     }
 }
@@ -188,6 +328,17 @@ private fun SelectorDeMes(mes: java.time.YearMonth, puedeAvanzar: Boolean, onAnt
     }
 }
 
+/** Botón del filtro de movimientos: relleno cuando está activo, con borde cuando no; ambos miden lo mismo. */
+@Composable
+private fun BotonFiltroMovimientos(texto: String, seleccionado: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val alto = modifier.height(48.dp)
+    if (seleccionado) {
+        Button(onClick = onClick, modifier = alto) { Text(texto, style = MaterialTheme.typography.titleSmall) }
+    } else {
+        OutlinedButton(onClick = onClick, modifier = alto) { Text(texto, style = MaterialTheme.typography.titleSmall) }
+    }
+}
+
 @Composable
 private fun MetodoRow(fila: MontoPorMetodoDto) {
     Card {
@@ -197,7 +348,6 @@ private fun MetodoRow(fila: MontoPorMetodoDto) {
         ) {
             Column {
                 Text(fila.metodo.replaceFirstChar(Char::uppercase), style = MaterialTheme.typography.bodyMedium)
-                Text("${fila.cantidadCobros} cobros", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(formatMoney(fila.monto), style = MonoStyles.Body)
         }
@@ -212,7 +362,7 @@ private fun MovimientoRow(movimiento: MovimientoCajaDto) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Column {
                     Text(
-                        if (esEgreso) "Egreso" else "Ingreso",
+                        if (esEgreso) "Egreso" else if (movimiento.origen == OrigenesMovimiento.PAGO) "Ingreso · cobro" else "Ingreso",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (esEgreso) CableraError else CableraSuccess,
                     )
@@ -237,33 +387,22 @@ private fun MovimientoRow(movimiento: MovimientoCajaDto) {
 }
 
 @Composable
-private fun GastoPendienteRow(gasto: GastoReportadoDto, procesando: Boolean, onAprobar: () -> Unit, onRechazar: () -> Unit) {
-    Card {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(gasto.descripcion, style = MaterialTheme.typography.bodyMedium)
-                Text(formatMoney(gasto.monto), style = MonoStyles.Body)
-            }
+private fun FormMovimientoSheet(uiState: CajaUiState, viewModel: CajaViewModel) {
+    Column(modifier = Modifier.imePadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
+        Text("Registrar movimiento", style = MaterialTheme.typography.titleLarge)
+        val esIngreso = uiState.tipoMovimiento == TiposMovimientoCaja.INGRESO
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
+            FilterChip(selected = esIngreso, onClick = { viewModel.onTipoMovimientoChange(TiposMovimientoCaja.INGRESO) }, label = { Text("Ingreso") })
+            FilterChip(selected = !esIngreso, onClick = { viewModel.onTipoMovimientoChange(TiposMovimientoCaja.EGRESO) }, label = { Text("Egreso") })
+        }
+        if (esIngreso) {
             Text(
-                "${gasto.usuario.nombre} · ${formatFechaHora(gasto.fecha)}",
+                "Ingreso externo: dinero que entra y no es el pago de un cliente (aporte, venta de un equipo, etc.). Los cobros a clientes se registran desde Cobranza.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                Button(onClick = onAprobar, enabled = !procesando, modifier = Modifier.weight(1f)) { Text("Registrar") }
-                OutlinedButton(onClick = onRechazar, enabled = !procesando, modifier = Modifier.weight(1f)) { Text("Rechazar") }
-            }
         }
-    }
-}
-
-@Composable
-private fun FormMovimientoSheet(uiState: CajaUiState, viewModel: CajaViewModel) {
-    Column(modifier = Modifier.padding(20.dp)) {
-        Text(
-            if (uiState.tipoMovimiento == TiposMovimientoCaja.EGRESO) "Registrar egreso" else "Registrar ingreso",
-            style = MaterialTheme.typography.titleLarge,
-        )
         OutlinedTextField(
             value = uiState.montoMovimiento,
             onValueChange = viewModel::onMontoChange,
@@ -281,7 +420,7 @@ private fun FormMovimientoSheet(uiState: CajaUiState, viewModel: CajaViewModel) 
                 FilterChip(selected = uiState.metodoMovimiento == valor, onClick = { viewModel.onMetodoChange(valor) }, label = { Text(label) })
             }
         }
-        if (uiState.tipoMovimiento == TiposMovimientoCaja.EGRESO) {
+        run {
             Text("Categoría", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 14.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -311,7 +450,7 @@ private fun FormMovimientoSheet(uiState: CajaUiState, viewModel: CajaViewModel) 
         OutlinedTextField(
             value = uiState.descripcionMovimiento,
             onValueChange = viewModel::onDescripcionChange,
-            label = { Text(if (uiState.tipoMovimiento == TiposMovimientoCaja.EGRESO) "Descripción del egreso" else "Descripción del ingreso") },
+            label = { Text(if (uiState.tipoMovimiento == TiposMovimientoCaja.INGRESO) "Concepto del ingreso" else "Concepto del egreso") },
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         )
         if (uiState.errorMovimiento != null) {
@@ -320,7 +459,7 @@ private fun FormMovimientoSheet(uiState: CajaUiState, viewModel: CajaViewModel) 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
             TextButton(onClick = viewModel::cerrarForm) { Text("Cancelar") }
             Button(onClick = viewModel::guardarMovimiento, enabled = !uiState.guardandoMovimiento) {
-                Text(if (uiState.guardandoMovimiento) "Guardando..." else "Guardar")
+                Text(if (uiState.guardandoMovimiento) "Guardando..." else if (uiState.tipoMovimiento == TiposMovimientoCaja.INGRESO) "Guardar ingreso" else "Guardar egreso")
             }
         }
     }

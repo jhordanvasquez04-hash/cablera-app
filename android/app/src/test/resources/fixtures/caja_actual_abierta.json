@@ -1,0 +1,28 @@
+{
+ "id": "7bf71af0-b0f8-47d7-a4b0-0817e781ba37",
+ "usuarioAperturaId": "ba2a23b3-a99d-4eb9-80ca-fa8d434e7e55",
+ "fechaApertura": "2026-09-25T16:19:46.808Z",
+ "montoInicial": "50",
+ "usuarioCierreId": null,
+ "fechaCierre": null,
+ "montoEsperado": null,
+ "montoContado": null,
+ "diferencia": null,
+ "observacion": null,
+ "estado": "ABIERTA",
+ "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3",
+ "usuarioApertura": {
+  "id": "ba2a23b3-a99d-4eb9-80ca-fa8d434e7e55",
+  "nombre": "Admin",
+  "apellido": "Pruebas"
+ },
+ "usuarioCierre": null,
+ "efectivoCobrado": 650,
+ "egresosEfectivo": 288,
+ "ingresosExternosEfectivo": 150,
+ "montoEsperadoActual": 562,
+ "otrosMetodos": {
+  "YAPE": 215,
+  "TRANSFERENCIA": 90
+ }
+}

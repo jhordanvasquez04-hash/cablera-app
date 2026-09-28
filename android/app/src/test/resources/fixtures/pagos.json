@@ -1,0 +1,45 @@
+[
+ {
+  "id": "1256ab6b-f827-4bd4-ac65-5f8a5fddcb22",
+  "fecha": "2026-09-25T16:19:46.892Z",
+  "monto": "35",
+  "metodoPago": "EFECTIVO",
+  "observacion": null,
+  "usuarioId": "ba2a23b3-a99d-4eb9-80ca-fa8d434e7e55",
+  "createdAt": "2026-09-25T16:19:46.932Z",
+  "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3",
+  "usuario": {
+   "id": "ba2a23b3-a99d-4eb9-80ca-fa8d434e7e55",
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  },
+  "cargos": [
+   {
+    "id": "9b0d79c6-53e1-4c7a-a5fd-d6852e7418fd",
+    "pagoId": "1256ab6b-f827-4bd4-ac65-5f8a5fddcb22",
+    "cargoId": "3b59bb16-2636-4346-83bd-0a6e8585e921",
+    "monto": "35",
+    "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3",
+    "cargo": {
+     "id": "3b59bb16-2636-4346-83bd-0a6e8585e921",
+     "periodo": "2026-09",
+     "monto": "35",
+     "vencimiento": "2026-10-05T05:00:00.000Z",
+     "estado": "PAGADO",
+     "contrato": {
+      "id": "48d28830-73fd-40d3-b5c1-fcefeb73c1cf",
+      "numero": "C00000000006",
+      "tipoServicio": "CABLE",
+      "direccion": "Calle Test 06",
+      "cliente": {
+       "nombres": "Jorge",
+       "apellidos": "Ramos Leon",
+       "dniRuc": "70000006",
+       "telefono": "970000006"
+      }
+     }
+    }
+   }
+  ]
+ }
+]

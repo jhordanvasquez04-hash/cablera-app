@@ -1,8 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import type { MetodoPago, Prisma } from "@prisma/client";
+import PDFDocument from "pdfkit";
+import type { Response } from "express";
 import { TenantPrismaService, type ScopedPrismaClient } from "../prisma/tenant-prisma.service";
 import { CargosService } from "../cargos/cargos.service";
 import { formatearPeriodoCorto } from "../cargos/periodo.util";
+import { numeroALetras } from "../common/numero-a-letras.util";
 import type { RegistrarPagoDto } from "./dto/registrar-pago.dto";
 import type { AnularBoletaDto } from "./dto/anular-boleta.dto";
 
@@ -10,6 +13,30 @@ type Tx = Prisma.TransactionClient;
 
 export function formatearFolio(numero: number): string {
   return `001-${String(numero).padStart(4, "0")}`;
+}
+
+const METODO_LABEL: Record<MetodoPago, string> = {
+  efectivo: "Efectivo",
+  yape: "Yape",
+  plin: "Plin",
+  transferencia: "Transferencia",
+  tarjeta: "Tarjeta",
+};
+
+const NOMBRES_MES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function fmtFechaCorta(f: Date): string {
+  return new Date(f).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+/** Primer y último día de un mes calendario (anio, mes 1-based), formateados dd/mm/aaaa. */
+function rangoPeriodo(anio: number, mes: number): { inicio: string; fin: string } {
+  const inicio = new Date(anio, mes - 1, 1);
+  const fin = new Date(anio, mes, 0);
+  return { inicio: fmtFechaCorta(inicio), fin: fmtFechaCorta(fin) };
 }
 
 @Injectable()
@@ -201,5 +228,148 @@ export class BoletasService {
         esSaldo: pago.montoAplicado < pago.cargo.montoCorrespondiente,
       })),
     };
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Fusión con Keysls: comprobante de pago en PDF (ticket A5) — mismo diseño que
+  // pagos.controller.js#comprobante del backend de Keysls, adaptado a los datos de cablera
+  // (folio propio de Boleta.numero en vez de un correlativo global + id, sin logo porque
+  // Empresa no tiene ese campo acá).
+  // ───────────────────────────────────────────────────────────────────────
+  async generarComprobantePdf(id: string, empresaId: string, res: Response) {
+    const boleta = await this.prisma.boleta.findFirst({
+      where: { id, empresaId },
+      include: {
+        cliente: true,
+        pagos: {
+          include: { cargo: { include: { servicioContratado: { include: { tipoServicio: true, contrato: true } } } } },
+        },
+      },
+    });
+    if (!boleta) {
+      throw new NotFoundException("Boleta no encontrada");
+    }
+
+    const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } });
+
+    // Igual que en Keysls: para un cargo que quedó PARCIAL hay que sumar TODOS sus pagos
+    // (no solo el de esta boleta) para mostrar cuánto queda pendiente de ese mes.
+    const cargosParciales = boleta.pagos.filter((p) => p.cargo.estado === "parcial").map((p) => p.cargoId);
+    const saldosPorCargo = new Map<string, number>();
+    if (cargosParciales.length > 0) {
+      const sumas = await this.prisma.pago.groupBy({
+        by: ["cargoId"],
+        where: { cargoId: { in: cargosParciales } },
+        _sum: { montoAplicado: true },
+      });
+      for (const s of sumas) saldosPorCargo.set(s.cargoId, s._sum.montoAplicado ?? 0);
+    }
+
+    const primerPago = boleta.pagos[0];
+    const servicio = primerPago?.cargo.servicioContratado;
+    const contrato = servicio?.contrato;
+    const monto = boleta.montoTotal;
+    const numeroComprobante = formatearFolio(boleta.numero);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="comprobante_${boleta.id.slice(0, 8)}.pdf"`);
+
+    const doc = new PDFDocument({ size: "A5", margin: 32 });
+    doc.pipe(res);
+
+    const anchoUtil = doc.page.width - 64;
+    const bordeX = 22;
+    const bordeY = 22;
+    const linea = () => {
+      doc.strokeColor("#000").lineWidth(0.5).moveTo(32, doc.y).lineTo(doc.page.width - 32, doc.y).stroke();
+      doc.moveDown(0.5);
+    };
+
+    // ── Encabezado ──
+    doc.fontSize(15).font("Helvetica-Bold").fillColor("#000").text(empresa?.nombre || "Mi Empresa", { align: "center" });
+    if (empresa?.ruc) doc.fontSize(11).font("Helvetica-Bold").text(empresa.ruc, { align: "center" });
+    doc.moveDown(0.5);
+
+    if (empresa?.agencia) doc.fontSize(9).font("Helvetica-Bold").text(empresa.agencia, { align: "center" });
+    if (empresa?.direccion) doc.fontSize(8.5).font("Helvetica").text(empresa.direccion, { align: "center" });
+    if (empresa?.telefono) doc.fontSize(8.5).font("Helvetica").text(empresa.telefono, { align: "center" });
+    doc.moveDown(0.6);
+
+    doc.fontSize(12).font("Helvetica-Bold").text("RECIBO", { align: "center" });
+    doc.fontSize(11).font("Helvetica-Bold").text(numeroComprobante, { align: "center" });
+    doc.moveDown(0.6);
+    linea();
+
+    // ── Datos del pago ──
+    doc.fontSize(9).font("Helvetica");
+    const fechaObj = new Date(boleta.fecha);
+    doc.font("Helvetica-Bold").text("Fecha: ", { continued: true }).font("Helvetica").text(fmtFechaCorta(fechaObj), { continued: true, width: anchoUtil / 2 });
+    doc
+      .font("Helvetica-Bold")
+      .text("  Hora: ", { continued: true })
+      .font("Helvetica")
+      .text(fechaObj.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+    doc.moveDown(0.4);
+
+    doc.font("Helvetica-Bold").text("Cliente: ", { continued: true }).font("Helvetica").text(boleta.cliente.nombreCompleto);
+    doc.font("Helvetica-Bold").text("Dni/Ruc: ", { continued: true }).font("Helvetica").text(boleta.cliente.dni || "—");
+    doc.font("Helvetica-Bold").text("Dirección: ", { continued: true }).font("Helvetica").text(contrato?.direccion || boleta.cliente.direccion || "—");
+    doc.moveDown(0.4);
+
+    doc.font("Helvetica-Bold").text("Forma: ", { continued: true }).font("Helvetica").text(METODO_LABEL[boleta.metodoPago]);
+    doc.moveDown(0.6);
+    linea();
+
+    // ── Tabla de conceptos ──
+    doc.font("Helvetica-Bold").fontSize(9);
+    const colDescX = 32;
+    const colImpX = doc.page.width - 32 - 60;
+    doc.text("Descripción", colDescX, doc.y, { continued: false });
+    doc.text("Importe", colImpX, doc.y - doc.currentLineHeight(), { width: 60, align: "right" });
+    doc.moveDown(0.3);
+    doc.font("Helvetica").fontSize(9);
+
+    for (const pago of boleta.pagos) {
+      const nombreServicio = pago.cargo.servicioContratado.tipoServicio.nombre;
+      const { inicio, fin } = rangoPeriodo(pago.cargo.anio, pago.cargo.mes);
+      const desc = `Mensualidad ${NOMBRES_MES[pago.cargo.mes - 1].toUpperCase()}, del ${inicio} Al ${fin} (${nombreServicio})`;
+      const yInicio = doc.y;
+      doc.text(desc, colDescX, yInicio, { width: colImpX - colDescX - 8 });
+      const yTrasDesc = doc.y;
+      doc.text(pago.montoAplicado.toFixed(2), colImpX, yInicio, { width: 60, align: "right" });
+      doc.y = Math.max(yTrasDesc, yInicio + doc.currentLineHeight());
+
+      if (pago.cargo.estado === "parcial") {
+        const saldoPendiente = pago.cargo.montoCorrespondiente - (saldosPorCargo.get(pago.cargoId) ?? 0);
+        doc
+          .font("Helvetica")
+          .fontSize(7.5)
+          .fillColor("#B45309")
+          .text(`Pago parcial — saldo pendiente de este mes: S/ ${saldoPendiente.toFixed(2)}`, colDescX, doc.y, { width: anchoUtil });
+        doc.fillColor("#000").fontSize(9);
+      }
+      doc.moveDown(0.2);
+    }
+
+    doc.moveDown(0.4);
+    linea();
+
+    // ── Totales ──
+    doc.font("Helvetica-Bold").fontSize(9).text(`Son: ${numeroALetras(monto)}`, 32, doc.y, { width: anchoUtil });
+    doc.moveDown(0.4);
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(9)
+      .text("Total:", colDescX, doc.y, { continued: true, width: colImpX - colDescX - 8 })
+      .text(monto.toFixed(2), { align: "right" });
+
+    doc.moveDown(1);
+    doc.font("Helvetica").fontSize(10).text("Gracias por su preferencia!", { align: "center" });
+
+    // ── Borde del ticket ──
+    const yFinBox = doc.y + 10;
+    doc.rect(bordeX, bordeY, doc.page.width - bordeX * 2, yFinBox - bordeY).lineWidth(1).strokeColor("#000").stroke();
+
+    doc.end();
   }
 }

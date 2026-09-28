@@ -2,7 +2,7 @@ import { IsIn, IsISO8601, IsNumber, IsOptional, IsString, Min } from "class-vali
 import type { MetodoPago, TipoMovimientoCaja } from "@prisma/client";
 
 const TIPOS: TipoMovimientoCaja[] = ["egreso", "ingreso"];
-const METODOS_PAGO: MetodoPago[] = ["efectivo", "yape", "plin", "transferencia"];
+const METODOS_PAGO: MetodoPago[] = ["efectivo", "yape", "plin", "transferencia", "tarjeta"]; // + tarjeta (fusión con Keysls)
 
 export class CreateMovimientoDto {
   @IsIn(TIPOS)

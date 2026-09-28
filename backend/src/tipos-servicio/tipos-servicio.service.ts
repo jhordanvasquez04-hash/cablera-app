@@ -23,11 +23,13 @@ export class TiposServicioService {
 
   /** Usado por la importación para obtener/crear el tipo "cable" sin duplicar lógica. */
   async obtenerOCrearPorNombre(nombre: string, empresaId: string, cliente: Cliente = this.prisma) {
+    // Ver el comentario en zonas.service.ts sobre por qué se convierte a `tx` antes de usarlo.
+    const tx = cliente as Prisma.TransactionClient;
     const nombreNormalizado = nombre.trim().toLowerCase();
-    const existente = await cliente.tipoServicio.findFirst({ where: { nombre: nombreNormalizado, empresaId } });
+    const existente = await tx.tipoServicio.findFirst({ where: { nombre: nombreNormalizado, empresaId } });
     if (existente) {
       return existente;
     }
-    return cliente.tipoServicio.create({ data: { nombre: nombreNormalizado, empresaId } });
+    return tx.tipoServicio.create({ data: { nombre: nombreNormalizado, empresaId } });
   }
 }

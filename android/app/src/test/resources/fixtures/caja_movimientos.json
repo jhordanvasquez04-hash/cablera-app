@@ -1,0 +1,152 @@
+[
+ {
+  "id": "f6b197f9-4fe5-4a65-a53a-e7ce40c6277e",
+  "tipo": "INGRESO",
+  "origen": "EXTERNO",
+  "fecha": "2026-09-25T17:52:09.649Z",
+  "monto": 80,
+  "metodoPago": "YAPE",
+  "categoria": "Venta de equipos",
+  "concepto": "Venta de router usado",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "5db19965-c7b8-47d4-a1af-38af6296b604",
+  "tipo": "INGRESO",
+  "origen": "EXTERNO",
+  "fecha": "2026-09-25T17:52:09.598Z",
+  "monto": 150,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Aporte",
+  "concepto": "Aporte del dueno",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "8120816a-9d3f-4a19-b755-c858af0e61ff",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:37:26.477Z",
+  "monto": 35,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Jose Huaman Torres · 2026-08",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "dd6dba08-4a41-4e95-8e27-4f1c31ddc940",
+  "tipo": "EGRESO",
+  "origen": "EGRESO",
+  "fecha": "2026-09-25T17:37:26.166Z",
+  "monto": 12.5,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Combustible",
+  "concepto": "Prueba app",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "76abafe0-3c55-4293-9682-c5a577c92dd4",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:20:38.692Z",
+  "monto": 35,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Jose Huaman Torres · 2026-09",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "1f9cf2e9-1fde-4080-9c4a-8f996734c8b1",
+  "tipo": "EGRESO",
+  "origen": "EGRESO",
+  "fecha": "2026-09-25T17:20:38.382Z",
+  "monto": 12.5,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Combustible",
+  "concepto": "Prueba app",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "731f33aa-b375-4ceb-96ae-5412043fc80d",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:05:33.476Z",
+  "monto": 180,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Carmen Villanueva Rojas · 2026-07, 2026-08",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "c8529fee-9314-4f9c-8f92-c2f64714786f",
+  "tipo": "INGRESO",
+  "origen": "PAGO",
+  "fecha": "2026-09-25T17:04:53.744Z",
+  "monto": 90,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Cobro de cliente",
+  "concepto": "Carmen Villanueva Rojas · 2026-09",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "f7a5e706-0fd9-4f35-a238-ff31c4142609",
+  "tipo": "EGRESO",
+  "origen": "EGRESO",
+  "fecha": "2026-09-25T17:00:50.033Z",
+  "monto": 300,
+  "metodoPago": "TRANSFERENCIA",
+  "categoria": "Planilla",
+  "concepto": "Adelanto tecnico",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ },
+ {
+  "id": "5b327394-4103-4c76-81da-1db837a1be7e",
+  "tipo": "EGRESO",
+  "origen": "EGRESO",
+  "fecha": "2026-09-25T17:00:50.009Z",
+  "monto": 120.5,
+  "metodoPago": "EFECTIVO",
+  "categoria": "Insumos",
+  "concepto": "Conectores y patchcords",
+  "observacion": null,
+  "usuario": {
+   "nombre": "Admin",
+   "apellido": "Pruebas"
+  }
+ }
+]

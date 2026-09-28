@@ -15,6 +15,9 @@ import kotlinx.coroutines.launch
 data class BoletaDetalleUiState(
     val boleta: UiState<BoletaDetalleDto> = UiState.Loading,
     val rolGestor: Boolean = false,
+    // Anular el pago (solo gestor): pide el motivo; el pago queda en el historial como anulado.
+    val mostrarAnular: Boolean = false,
+    val motivoAnulacion: String = "",
     val anulando: Boolean = false,
     val errorAnular: String? = null,
 )
@@ -42,20 +45,27 @@ class BoletaDetalleViewModel(
             _uiState.value = _uiState.value.copy(boleta = if (guardada != null) UiState.Success(guardada) else UiState.Loading)
             boletasRepository.obtener(boletaId)
                 .onSuccess { data -> _uiState.value = _uiState.value.copy(boleta = UiState.Success(data)) }
-                .onFailure { e -> _uiState.value = _uiState.value.copy(boleta = UiState.Error(e.message ?: "No se pudo cargar la boleta")) }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(boleta = UiState.Error(e.message ?: "No se pudo cargar el comprobante")) }
         }
     }
 
-    fun anular() {
+    fun abrirAnular() { _uiState.value = _uiState.value.copy(mostrarAnular = true, motivoAnulacion = "", errorAnular = null) }
+    fun cerrarAnular() { _uiState.value = _uiState.value.copy(mostrarAnular = false) }
+    fun onMotivoAnulacionChange(v: String) { _uiState.value = _uiState.value.copy(motivoAnulacion = v, errorAnular = null) }
+
+    fun confirmarAnular() {
+        val motivo = _uiState.value.motivoAnulacion.trim()
+        if (motivo.length < 3) {
+            _uiState.value = _uiState.value.copy(errorAnular = "Indica el motivo de la anulación")
+            return
+        }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(anulando = true, errorAnular = null)
-            boletasRepository.anular(boletaId)
-                .onSuccess {
-                    _uiState.value = _uiState.value.copy(anulando = false, boleta = UiState.Success(it))
+            boletasRepository.anular(boletaId, motivo)
+                .onSuccess { data ->
+                    _uiState.value = _uiState.value.copy(anulando = false, mostrarAnular = false, boleta = UiState.Success(data))
                 }
-                .onFailure { e ->
-                    _uiState.value = _uiState.value.copy(anulando = false, errorAnular = e.message ?: "No se pudo anular la boleta")
-                }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(anulando = false, errorAnular = e.message ?: "No se pudo anular el pago") }
         }
     }
 }

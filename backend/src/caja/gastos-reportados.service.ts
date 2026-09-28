@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import type { Prisma } from "@prisma/client";
+import type { MetodoPago, Prisma } from "@prisma/client";
 import { TenantPrismaService, type ScopedPrismaClient } from "../prisma/tenant-prisma.service";
 import type { ReportarGastoDto } from "./dto/reportar-gasto.dto";
 
@@ -28,7 +28,7 @@ export class GastosReportadosService {
     });
   }
 
-  async aprobar(id: string, metodoPago: "efectivo" | "yape" | "plin" | "transferencia", empresaId: string) {
+  async aprobar(id: string, metodoPago: MetodoPago, empresaId: string) {
     // Ver el comentario equivalente en boletas.service.ts sobre el cast de $transaction().
     return this.prisma.$transaction(async (txExt) => {
       const tx = txExt as unknown as Tx;

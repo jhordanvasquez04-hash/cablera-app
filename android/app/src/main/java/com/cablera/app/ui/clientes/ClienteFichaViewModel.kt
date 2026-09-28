@@ -3,17 +3,16 @@ package com.cablera.app.ui.clientes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cablera.app.data.remote.dto.ClienteFichaDto
-import com.cablera.app.data.remote.dto.CreateDescuentoRequest
+import com.cablera.app.data.remote.dto.EstadosCargo
 import com.cablera.app.data.remote.dto.MetodosPago
-import com.cablera.app.data.remote.dto.ServicioContratadoInput
-import com.cablera.app.data.remote.dto.ServicioTecnicoDto
-import com.cablera.app.data.remote.dto.TipoServicioDto
+import com.cablera.app.data.remote.dto.PuntoRedResumenDto
+import com.cablera.app.data.remote.dto.TecnicoResumenDto
 import com.cablera.app.data.remote.dto.UpdateClienteRequest
-import com.cablera.app.data.remote.dto.UpdateServicioContratadoRequest
+import com.cablera.app.data.remote.dto.UpdateContratoRequest
 import com.cablera.app.data.repository.BoletasRepository
 import com.cablera.app.data.repository.ClientesRepository
-import com.cablera.app.data.repository.ConfiguracionRepository
-import com.cablera.app.data.repository.ServiciosTecnicosRepository
+import com.cablera.app.data.repository.ContratosRepository
+import com.cablera.app.data.repository.OrdenesServicioRepository
 import com.cablera.app.ui.common.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,48 +28,41 @@ data class ClienteFichaUiState(
     val metodoCobroRapido: String = MetodosPago.EFECTIVO,
     val enviandoCobro: Boolean = false,
     val errorCobro: String? = null,
-    // Editar datos (solo datos del cliente; el monto vive en cada servicio)
+    // Editar datos del cliente (el monto y la ficha técnica viven en cada contrato)
     val mostrarEditar: Boolean = false,
     val editNombre: String = "",
     val editTelefono: String = "",
     val editDireccion: String = "",
     val guardandoEdicion: Boolean = false,
     val errorEdicion: String? = null,
-    // Dar de baja (cliente completo)
+    // Dar de baja (cliente completo: todos sus contratos vigentes)
     val mostrarBaja: Boolean = false,
     val motivoBaja: String? = null,
     val enviandoBaja: Boolean = false,
     val errorBaja: String? = null,
-    // Servicios técnicos del cliente
-    val serviciosTecnicos: UiState<List<ServicioTecnicoDto>> = UiState.Loading,
-    // Catálogo de tipos de servicio (para agregar/editar servicios contratados)
-    val tiposServicio: List<TipoServicioDto> = emptyList(),
-    // Agregar servicio contratado
-    val mostrarAgregarServicio: Boolean = false,
-    val nuevoServicioTipoId: String? = null,
-    val nuevoServicioMonto: String = "",
-    val nuevoServicioFacturacionPropia: Boolean = false,
-    val nuevoServicioDia: String = "1",
-    val guardandoServicio: Boolean = false,
-    val errorServicio: String? = null,
-    // Editar servicio contratado (monto / facturación)
-    val servicioEditandoId: String? = null,
-    val editServicioMonto: String = "",
-    val editServicioFacturacionPropia: Boolean = false,
-    val editServicioDia: String = "1",
-    val guardandoEditarServicio: Boolean = false,
-    val errorEditarServicio: String? = null,
-    // Aplicar descuento a un servicio
-    val servicioDescuentoId: String? = null,
-    val descuentoPorcentaje: String = "",
-    val descuentoCantidadMeses: String = "1",
-    val guardandoDescuento: Boolean = false,
-    val errorDescuento: String? = null,
-    // Dar de baja un servicio puntual
-    val servicioBajaId: String? = null,
-    val motivoBajaServicio: String? = null,
-    val enviandoBajaServicio: Boolean = false,
-    val errorBajaServicio: String? = null,
+    // Editar un contrato: lo que se cobra (costo y día de corte) y su ficha técnica
+    val puntosRed: List<PuntoRedResumenDto> = emptyList(),
+    val tecnicos: List<TecnicoResumenDto> = emptyList(),
+    val contratoEditandoId: String? = null,
+    val ecCostoMensual: String = "",
+    val ecDiaCorte: String = "1",
+    val ecDireccion: String = "",
+    val ecReferencia: String = "",
+    val ecSector: String = "",
+    val ecIpWan: String = "",
+    val ecPppoeUsuario: String = "",
+    val ecPppoePassword: String = "",
+    val ecPrecinto: String = "",
+    val ecEquipoSerie: String = "",
+    val ecPuntoRedId: String? = null,
+    val ecTecnicoInstaladorId: String? = null,
+    val guardandoContrato: Boolean = false,
+    val errorContrato: String? = null,
+    // Dar de baja un contrato puntual
+    val contratoBajaId: String? = null,
+    val motivoBajaContrato: String? = null,
+    val enviandoBajaContrato: Boolean = false,
+    val errorBajaContrato: String? = null,
 )
 
 val MOTIVOS_BAJA = listOf("Mudanza", "No pagó", "Cambio de proveedor", "Otro")
@@ -79,8 +71,8 @@ class ClienteFichaViewModel(
     val clienteId: String,
     private val clientesRepository: ClientesRepository,
     private val boletasRepository: BoletasRepository,
-    private val serviciosTecnicosRepository: ServiciosTecnicosRepository,
-    private val configuracionRepository: ConfiguracionRepository,
+    private val contratosRepository: ContratosRepository,
+    private val ordenesServicioRepository: OrdenesServicioRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ClienteFichaUiState())
@@ -88,21 +80,13 @@ class ClienteFichaViewModel(
 
     init {
         cargar()
-        cargarServiciosTecnicos()
         viewModelScope.launch {
-            configuracionRepository.listarTiposServicio().onSuccess { tipos ->
-                _uiState.value = _uiState.value.copy(tiposServicio = tipos)
-            }
+            contratosRepository.listarPuntosRed().onSuccess { puntos -> _uiState.value = _uiState.value.copy(puntosRed = puntos) }
         }
-    }
-
-    fun cargarServiciosTecnicos() {
         viewModelScope.launch {
-            val guardados = serviciosTecnicosRepository.listarEnCache(estado = null, tipoServicioTecnicoId = null, clienteId = clienteId)
-            _uiState.value = _uiState.value.copy(serviciosTecnicos = if (guardados != null) UiState.Success(guardados) else UiState.Loading)
-            serviciosTecnicosRepository.listar(estado = null, tipoServicioTecnicoId = null, clienteId = clienteId)
-                .onSuccess { data -> _uiState.value = _uiState.value.copy(serviciosTecnicos = UiState.Success(data)) }
-                .onFailure { e -> _uiState.value = _uiState.value.copy(serviciosTecnicos = UiState.Error(e.message ?: "No se pudo cargar servicios técnicos")) }
+            ordenesServicioRepository.listarTecnicos().onSuccess { tecnicos ->
+                _uiState.value = _uiState.value.copy(tecnicos = tecnicos.filter { it.activo })
+            }
         }
     }
 
@@ -125,25 +109,25 @@ class ClienteFichaViewModel(
 
     fun onTabChange(index: Int) { _uiState.value = _uiState.value.copy(tabSeleccionada = index) }
 
+    private fun cargosPendientes() =
+        (( _uiState.value.ficha as? UiState.Success)?.data?.cargosMesAMes ?: emptyList()).filter { it.estado != EstadosCargo.PAGADO }
+
     // --- Cobro rápido ---
     fun abrirCobroRapido() {
-        val ficha = (_uiState.value.ficha as? UiState.Success)?.data ?: return
-        val pendientes = ficha.cargosMesAMes.filter { it.estado != "pagado" }
-        val sugerido = pendientes.sumOf { it.saldo }
+        if (_uiState.value.ficha !is UiState.Success) return
+        val sugerido = cargosPendientes().sumOf { it.saldo }
         _uiState.value = _uiState.value.copy(mostrarCobroRapido = true, montoCobroRapido = "%.2f".format(sugerido), errorCobro = null)
     }
 
     fun cerrarCobroRapido() { _uiState.value = _uiState.value.copy(mostrarCobroRapido = false) }
 
     fun onMontoCobroRapidoTodo() {
-        val ficha = (_uiState.value.ficha as? UiState.Success)?.data ?: return
-        val total = ficha.cargosMesAMes.filter { it.estado != "pagado" }.sumOf { it.saldo }
-        _uiState.value = _uiState.value.copy(montoCobroRapido = "%.2f".format(total))
+        _uiState.value = _uiState.value.copy(montoCobroRapido = "%.2f".format(cargosPendientes().sumOf { it.saldo }))
     }
 
     fun onMontoCobroRapidoUnMes() {
-        val ficha = (_uiState.value.ficha as? UiState.Success)?.data ?: return
-        val primero = ficha.cargosMesAMes.filter { it.estado != "pagado" }.firstOrNull()?.saldo ?: 0.0
+        // El cargo más antiguo primero: es el que se cubre antes al aplicar el pago.
+        val primero = cargosPendientes().minWithOrNull(compareBy({ it.anio }, { it.mes }))?.saldo ?: 0.0
         _uiState.value = _uiState.value.copy(montoCobroRapido = "%.2f".format(primero))
     }
 
@@ -151,10 +135,9 @@ class ClienteFichaViewModel(
     fun onMetodoCobroRapidoChange(v: String) { _uiState.value = _uiState.value.copy(metodoCobroRapido = v) }
 
     fun confirmarCobroRapido(onSuccess: (String) -> Unit) {
-        val ficha = (_uiState.value.ficha as? UiState.Success)?.data ?: return
         val estado = _uiState.value
         val monto = estado.montoCobroRapido.toDoubleOrNull()
-        val pendientes = ficha.cargosMesAMes.filter { it.estado != "pagado" }
+        val pendientes = cargosPendientes()
         if (monto == null || monto <= 0.0 || pendientes.isEmpty()) {
             _uiState.value = estado.copy(errorCobro = "Ingresa un monto válido")
             return
@@ -230,159 +213,116 @@ class ClienteFichaViewModel(
         }
     }
 
-    // --- Agregar servicio contratado ---
-    fun abrirAgregarServicio() {
-        val estado = _uiState.value
-        _uiState.value = estado.copy(
-            mostrarAgregarServicio = true,
-            nuevoServicioTipoId = estado.tiposServicio.firstOrNull()?.id,
-            nuevoServicioMonto = "",
-            nuevoServicioFacturacionPropia = false,
-            nuevoServicioDia = "1",
-            errorServicio = null,
-        )
-    }
-    fun cerrarAgregarServicio() { _uiState.value = _uiState.value.copy(mostrarAgregarServicio = false) }
-    fun onNuevoServicioTipoChange(v: String) { _uiState.value = _uiState.value.copy(nuevoServicioTipoId = v) }
-    fun onNuevoServicioMontoChange(v: String) { _uiState.value = _uiState.value.copy(nuevoServicioMonto = v) }
-    fun onNuevoServicioFacturacionPropiaChange(v: Boolean) { _uiState.value = _uiState.value.copy(nuevoServicioFacturacionPropia = v) }
-    fun onNuevoServicioDiaChange(v: String) { _uiState.value = _uiState.value.copy(nuevoServicioDia = v.filter(Char::isDigit).take(2)) }
+    // Nuevo contrato: ver ContratoNuevoScreen (navegación desde "+ Nuevo contrato" en
+    // ClienteFichaScreen, con este cliente ya fijo).
 
-    fun confirmarAgregarServicio() {
-        val estado = _uiState.value
-        val monto = estado.nuevoServicioMonto.toDoubleOrNull()
-        if (estado.nuevoServicioTipoId == null || monto == null || monto < 0) {
-            _uiState.value = estado.copy(errorServicio = "Completa el tipo de servicio y un monto válido")
-            return
-        }
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(guardandoServicio = true, errorServicio = null)
-            clientesRepository.agregarServicio(
-                clienteId,
-                ServicioContratadoInput(
-                    tipoServicioId = estado.nuevoServicioTipoId,
-                    montoBase = monto,
-                    fechaFacturacionOverride = if (estado.nuevoServicioFacturacionPropia) estado.nuevoServicioDia.toIntOrNull()?.coerceIn(1, 28) else null,
-                ),
-            ).onSuccess {
-                _uiState.value = _uiState.value.copy(guardandoServicio = false, mostrarAgregarServicio = false)
-                cargar()
-            }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(guardandoServicio = false, errorServicio = e.message ?: "No se pudo agregar el servicio")
-            }
-        }
-    }
-
-    // --- Editar servicio contratado ---
-    fun abrirEditarServicio(servicioId: String) {
+    // --- Editar un contrato (costo, día de corte y ficha técnica) ---
+    fun abrirEditarContrato(contratoId: String) {
         val ficha = (_uiState.value.ficha as? UiState.Success)?.data ?: return
-        val servicio = ficha.cliente.serviciosContratados.find { it.id == servicioId } ?: return
+        val contrato = ficha.cliente.contratos.find { it.id == contratoId } ?: return
         _uiState.value = _uiState.value.copy(
-            servicioEditandoId = servicioId,
-            editServicioMonto = servicio.montoBase.toString(),
-            editServicioFacturacionPropia = servicio.fechaFacturacionOverride != null,
-            editServicioDia = (servicio.fechaFacturacionOverride ?: 1).toString(),
-            errorEditarServicio = null,
+            contratoEditandoId = contratoId,
+            ecCostoMensual = contrato.costoMensual.let { if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString() },
+            ecDiaCorte = (contrato.diaCorte ?: 1).toString(),
+            ecDireccion = contrato.direccion ?: "",
+            ecReferencia = contrato.referencia ?: "",
+            ecSector = contrato.sector ?: "",
+            ecIpWan = contrato.ipWan ?: "",
+            ecPppoeUsuario = contrato.pppoeUsuario ?: "",
+            ecPppoePassword = contrato.pppoePassword ?: "",
+            ecPrecinto = contrato.precinto ?: "",
+            ecEquipoSerie = contrato.equipoSerie ?: "",
+            ecPuntoRedId = contrato.puntoRedId,
+            ecTecnicoInstaladorId = contrato.tecnicoInstaladorId,
+            errorContrato = null,
         )
     }
-    fun cerrarEditarServicio() { _uiState.value = _uiState.value.copy(servicioEditandoId = null) }
-    fun onEditServicioMontoChange(v: String) { _uiState.value = _uiState.value.copy(editServicioMonto = v) }
-    fun onEditServicioFacturacionPropiaChange(v: Boolean) { _uiState.value = _uiState.value.copy(editServicioFacturacionPropia = v) }
-    fun onEditServicioDiaChange(v: String) { _uiState.value = _uiState.value.copy(editServicioDia = v.filter(Char::isDigit).take(2)) }
+    fun cerrarEditarContrato() { _uiState.value = _uiState.value.copy(contratoEditandoId = null) }
+    fun onEcCostoMensualChange(v: String) { _uiState.value = _uiState.value.copy(ecCostoMensual = v) }
+    fun onEcDiaCorteChange(v: String) { _uiState.value = _uiState.value.copy(ecDiaCorte = v.filter(Char::isDigit).take(2)) }
+    fun onEcDireccionChange(v: String) { _uiState.value = _uiState.value.copy(ecDireccion = v) }
+    fun onEcReferenciaChange(v: String) { _uiState.value = _uiState.value.copy(ecReferencia = v) }
+    fun onEcSectorChange(v: String) { _uiState.value = _uiState.value.copy(ecSector = v) }
+    fun onEcIpWanChange(v: String) { _uiState.value = _uiState.value.copy(ecIpWan = v) }
+    fun onEcPppoeUsuarioChange(v: String) { _uiState.value = _uiState.value.copy(ecPppoeUsuario = v) }
+    fun onEcPppoePasswordChange(v: String) { _uiState.value = _uiState.value.copy(ecPppoePassword = v) }
+    fun onEcPrecintoChange(v: String) { _uiState.value = _uiState.value.copy(ecPrecinto = v) }
+    fun onEcEquipoSerieChange(v: String) { _uiState.value = _uiState.value.copy(ecEquipoSerie = v) }
+    fun onEcPuntoRedChange(v: String?) { _uiState.value = _uiState.value.copy(ecPuntoRedId = v) }
+    fun onEcTecnicoChange(v: String?) { _uiState.value = _uiState.value.copy(ecTecnicoInstaladorId = v) }
 
-    fun confirmarEditarServicio() {
+    fun guardarContrato() {
         val estado = _uiState.value
-        val servicioId = estado.servicioEditandoId ?: return
-        val monto = estado.editServicioMonto.toDoubleOrNull()
-        if (monto == null || monto < 0) {
-            _uiState.value = estado.copy(errorEditarServicio = "Ingresa un monto válido")
+        val contratoId = estado.contratoEditandoId ?: return
+        val costo = estado.ecCostoMensual.toDoubleOrNull()
+        val diaCorte = estado.ecDiaCorte.toIntOrNull()
+        if (costo == null || costo < 0 || diaCorte == null || diaCorte !in 1..31) {
+            _uiState.value = estado.copy(errorContrato = "Ingresa un costo válido y un día de corte entre 1 y 31")
+            return
+        }
+        if (estado.ecDireccion.isBlank()) {
+            _uiState.value = estado.copy(errorContrato = "La dirección del servicio es obligatoria")
             return
         }
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(guardandoEditarServicio = true, errorEditarServicio = null)
-            clientesRepository.actualizarServicio(
-                clienteId,
-                servicioId,
-                UpdateServicioContratadoRequest(
-                    montoBase = monto,
-                    fechaFacturacionOverride = if (estado.editServicioFacturacionPropia) estado.editServicioDia.toIntOrNull()?.coerceIn(1, 28) else null,
+            _uiState.value = _uiState.value.copy(guardandoContrato = true, errorContrato = null)
+            contratosRepository.actualizar(
+                contratoId,
+                UpdateContratoRequest(
+                    direccion = estado.ecDireccion.trim(),
+                    referencia = estado.ecReferencia.ifBlank { null },
+                    sector = estado.ecSector.ifBlank { null },
+                    ipWan = estado.ecIpWan.ifBlank { null },
+                    pppoeUsuario = estado.ecPppoeUsuario.ifBlank { null },
+                    pppoePassword = estado.ecPppoePassword.ifBlank { null },
+                    precinto = estado.ecPrecinto.ifBlank { null },
+                    equipoSerie = estado.ecEquipoSerie.ifBlank { null },
+                    puntoRedId = estado.ecPuntoRedId,
+                    tecnicoInstaladorId = estado.ecTecnicoInstaladorId,
+                    costoMensual = costo,
+                    diaCorte = diaCorte,
                 ),
-            ).onSuccess {
-                _uiState.value = _uiState.value.copy(guardandoEditarServicio = false, servicioEditandoId = null)
-                cargar()
-            }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(guardandoEditarServicio = false, errorEditarServicio = e.message ?: "No se pudo guardar")
-            }
+            )
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(guardandoContrato = false, contratoEditandoId = null)
+                    cargar()
+                }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(guardandoContrato = false, errorContrato = e.message ?: "No se pudo guardar el contrato") }
         }
     }
 
-    // --- Suspender / activar un servicio ---
-    fun suspenderServicio(servicioId: String) {
-        viewModelScope.launch {
-            clientesRepository.suspenderServicio(clienteId, servicioId).onSuccess { cargar() }
-        }
+    fun suspenderContrato(contratoId: String) {
+        viewModelScope.launch { contratosRepository.suspender(contratoId).onSuccess { cargar() } }
     }
 
-    fun activarServicio(servicioId: String) {
-        viewModelScope.launch {
-            clientesRepository.activarServicio(clienteId, servicioId).onSuccess { cargar() }
-        }
+    fun activarContrato(contratoId: String) {
+        viewModelScope.launch { contratosRepository.activar(contratoId).onSuccess { cargar() } }
     }
 
-    // --- Dar de baja un servicio puntual ---
-    fun abrirBajaServicio(servicioId: String) { _uiState.value = _uiState.value.copy(servicioBajaId = servicioId, motivoBajaServicio = null, errorBajaServicio = null) }
-    fun cerrarBajaServicio() { _uiState.value = _uiState.value.copy(servicioBajaId = null) }
-    fun onMotivoBajaServicioChange(v: String) { _uiState.value = _uiState.value.copy(motivoBajaServicio = v) }
+    fun cortarContrato(contratoId: String) {
+        viewModelScope.launch { contratosRepository.cortar(contratoId).onSuccess { cargar() } }
+    }
 
-    fun confirmarBajaServicio() {
+    fun abrirBajaContrato(contratoId: String) { _uiState.value = _uiState.value.copy(contratoBajaId = contratoId, motivoBajaContrato = null, errorBajaContrato = null) }
+    fun cerrarBajaContrato() { _uiState.value = _uiState.value.copy(contratoBajaId = null) }
+    fun onMotivoBajaContratoChange(v: String) { _uiState.value = _uiState.value.copy(motivoBajaContrato = v) }
+
+    fun confirmarBajaContrato() {
         val estado = _uiState.value
-        val servicioId = estado.servicioBajaId ?: return
-        val motivo = estado.motivoBajaServicio
+        val contratoId = estado.contratoBajaId ?: return
+        val motivo = estado.motivoBajaContrato
         if (motivo.isNullOrBlank()) {
-            _uiState.value = estado.copy(errorBajaServicio = "Elige un motivo")
+            _uiState.value = estado.copy(errorBajaContrato = "Elige un motivo")
             return
         }
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(enviandoBajaServicio = true, errorBajaServicio = null)
-            clientesRepository.darDeBajaServicio(clienteId, servicioId, motivo)
+            _uiState.value = _uiState.value.copy(enviandoBajaContrato = true, errorBajaContrato = null)
+            contratosRepository.darDeBaja(contratoId, motivo)
                 .onSuccess {
-                    _uiState.value = _uiState.value.copy(enviandoBajaServicio = false, servicioBajaId = null)
+                    _uiState.value = _uiState.value.copy(enviandoBajaContrato = false, contratoBajaId = null)
                     cargar()
                 }
-                .onFailure { e -> _uiState.value = _uiState.value.copy(enviandoBajaServicio = false, errorBajaServicio = e.message ?: "No se pudo dar de baja el servicio") }
-        }
-    }
-
-    // --- Aplicar descuento a un servicio ---
-    fun abrirDescuento(servicioId: String) {
-        _uiState.value = _uiState.value.copy(
-            servicioDescuentoId = servicioId,
-            descuentoPorcentaje = "",
-            descuentoCantidadMeses = "1",
-            errorDescuento = null,
-        )
-    }
-    fun cerrarDescuento() { _uiState.value = _uiState.value.copy(servicioDescuentoId = null) }
-    fun onDescuentoPorcentajeChange(v: String) { _uiState.value = _uiState.value.copy(descuentoPorcentaje = v.filter(Char::isDigit).take(3)) }
-    fun onDescuentoCantidadMesesChange(v: String) { _uiState.value = _uiState.value.copy(descuentoCantidadMeses = v.filter(Char::isDigit).take(2)) }
-
-    fun confirmarDescuento() {
-        val estado = _uiState.value
-        val servicioId = estado.servicioDescuentoId ?: return
-        val porcentaje = estado.descuentoPorcentaje.toIntOrNull()
-        val meses = estado.descuentoCantidadMeses.toIntOrNull()
-        if (porcentaje == null || porcentaje !in 0..100 || meses == null || meses < 1) {
-            _uiState.value = estado.copy(errorDescuento = "Ingresa un porcentaje (0-100) y una cantidad de meses válida")
-            return
-        }
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(guardandoDescuento = true, errorDescuento = null)
-            clientesRepository.aplicarDescuento(clienteId, servicioId, CreateDescuentoRequest(porcentaje = porcentaje, cantidadMeses = meses))
-                .onSuccess {
-                    _uiState.value = _uiState.value.copy(guardandoDescuento = false, servicioDescuentoId = null)
-                    cargar()
-                }
-                .onFailure { e -> _uiState.value = _uiState.value.copy(guardandoDescuento = false, errorDescuento = e.message ?: "No se pudo aplicar el descuento") }
+                .onFailure { e -> _uiState.value = _uiState.value.copy(enviandoBajaContrato = false, errorBajaContrato = e.message ?: "No se pudo dar de baja el contrato") }
         }
     }
 }

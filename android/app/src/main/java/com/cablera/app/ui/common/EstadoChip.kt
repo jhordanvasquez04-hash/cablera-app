@@ -11,8 +11,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.cablera.app.ui.theme.CableraError
 import com.cablera.app.ui.theme.CableraErrorBg
+import com.cablera.app.ui.theme.CableraInfo
+import com.cablera.app.ui.theme.CableraInfoBg
 import com.cablera.app.ui.theme.CableraNeutral
 import com.cablera.app.ui.theme.CableraNeutralBg
+import com.cablera.app.ui.theme.CableraProgress
+import com.cablera.app.ui.theme.CableraProgressBg
 import com.cablera.app.ui.theme.CableraSuccess
 import com.cablera.app.ui.theme.CableraSuccessBg
 import com.cablera.app.ui.theme.CableraWarning
@@ -53,6 +57,14 @@ fun coloresEstadoCargo(estado: String): EstadoColores = when (estado) {
 fun coloresEstadoBoleta(estado: String): EstadoColores = when (estado) {
     "anulada" -> EstadoColores(CableraError, CableraErrorBg)
     else -> EstadoColores(CableraSuccess, CableraSuccessBg)
+}
+
+fun coloresEstadoOrden(estado: String): EstadoColores = when (estado) {
+    "completada" -> EstadoColores(CableraSuccess, CableraSuccessBg)
+    "cancelada" -> EstadoColores(CableraNeutral, CableraNeutralBg)
+    "en_proceso" -> EstadoColores(CableraProgress, CableraProgressBg)
+    "asignada" -> EstadoColores(CableraInfo, CableraInfoBg)
+    else -> EstadoColores(CableraWarning, CableraWarningBg) // pendiente
 }
 
 fun colorEstadoServicio(estado: String): Color = coloresEstadoServicio(estado).texto

@@ -32,11 +32,33 @@ fun parseHexColor(hex: String?, fallback: Color): Color {
     }
 }
 
+// Tema claro completo: fondo gris azulado suave y superficies (tarjetas, barra inferior, hojas, diálogos)
+// en blanco puro. Sin esto Material usa sus tonos por defecto, que se ven crema/lavanda.
 private val LightColors = lightColorScheme(
     primary = CableraPrimary,
+    onPrimary = Color.White,
+    primaryContainer = CableraPrimaryLight,
+    onPrimaryContainer = CableraPrimary,
     secondary = CableraSecondary,
-    error = CableraError,
+    secondaryContainer = CableraPrimaryLight,
+    onSecondaryContainer = CableraPrimary,
     background = SurfaceLight,
+    onBackground = Ink,
+    surface = Color.White,
+    onSurface = Ink,
+    surfaceVariant = Color(0xFFE8EEF6),
+    onSurfaceVariant = TextSecondary,
+    surfaceTint = Color.White,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color.White,
+    surfaceContainer = Color.White,
+    surfaceContainerHigh = Color.White,
+    surfaceContainerHighest = Color.White,
+    outline = Color(0xFFB9C4D2),
+    outlineVariant = Outline,
+    error = CableraError,
+    errorContainer = CableraErrorBg,
+    onErrorContainer = CableraError,
 )
 
 private val DarkColors = darkColorScheme(
@@ -47,9 +69,8 @@ private val DarkColors = darkColorScheme(
 )
 
 /**
- * El primario/secundario vienen de Configuracion (editable desde Ajustes/la web) para que la
- * marca del negocio se refleje en toda la app, igual que en el frontend web. [configuracion] nulo
- * (aún no cargó, o falló la carga) cae en los colores por defecto de la app.
+ * Keysls no guarda colores de marca por empresa, así que la app usa siempre los suyos. El parámetro
+ * [configuracion] se conserva para no tocar a quien llama, pero ya no cambia los colores.
  */
 @Composable
 fun CableraTheme(
@@ -57,8 +78,8 @@ fun CableraTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val primary = parseHexColor(configuracion?.colorPrimario, CableraPrimary)
-    val secondary = parseHexColor(configuracion?.colorSecundario, CableraSecondary)
+    val primary = CableraPrimary
+    val secondary = CableraSecondary
 
     val colorScheme = if (darkTheme) {
         DarkColors.copy(primary = primary, secondary = secondary)

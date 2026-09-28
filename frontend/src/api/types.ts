@@ -44,6 +44,18 @@ export interface Zona {
   correlativoActual: number;
 }
 
+// Fusión con Keysls (Sistema-de-Gestion-ISP): catálogo de planes.
+export type TipoServicioRed = "internet" | "cable" | "duo";
+
+export interface Plan {
+  id: string;
+  nombre: string;
+  tipoServicio: TipoServicioRed;
+  mbps: number | null;
+  precio: number;
+  activo: boolean;
+}
+
 export interface TipoServicio {
   id: string;
   nombre: string;
@@ -210,6 +222,155 @@ export interface GastoReportado {
   descripcion: string;
   estado: EstadoGastoReportado;
   usuario: { nombre: string };
+}
+
+// Fusión con Keysls: topología física de red (NAPs y CTOs) y ficha técnica de instalación.
+export type TipoPuntoRed = "nap" | "cto";
+export type EstadoPuntoRed = "activa" | "saturada" | "mantenimiento";
+
+export interface PuntoRed {
+  id: string;
+  tipo: TipoPuntoRed;
+  codigo: string;
+  latitud: number;
+  longitud: number;
+  capacidad: number | null;
+  ocupados: number;
+  estado: EstadoPuntoRed;
+  direccion: string | null;
+  notas: string | null;
+  napId: string | null;
+}
+
+export type EstadoContrato = "activo" | "suspendido" | "cortado" | "baja";
+
+export interface Contrato {
+  id: string;
+  servicioContratadoId: string;
+  servicioContratado: {
+    id: string;
+    cliente: { id: string; nombreCompleto: string; numeroContrato: string };
+    tipoServicio: { id: string; nombre: string };
+  };
+  direccion: string | null;
+  referencia: string | null;
+  sector: string | null;
+  ipWan: string | null;
+  mascara: string | null;
+  gateway: string | null;
+  pppoeUsuario: string | null;
+  pppoePassword: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  precinto: string | null;
+  puntoRedId: string | null;
+  puntoRed: PuntoRed | null;
+  equipoSerie: string | null;
+  equipoProductoId: string | null;
+  equipoProducto: { id: string; nombre: string; codigo: string | null } | null;
+  fechaInstalacion: string | null;
+  tecnicoInstaladorId: string | null;
+  tecnicoInstalador: { id: string; nombre: string; apellido: string } | null;
+  estado: EstadoContrato;
+  motivoBaja: string | null;
+  fechaBaja: string | null;
+  fechaCorte: string | null;
+}
+
+export type TipoOrdenServicio =
+  | "instalacion"
+  | "alta_servicio"
+  | "averia"
+  | "cambio_domicilio"
+  | "cambio_equipo"
+  | "cambio_plan"
+  | "cambio_titular"
+  | "corte_solicitud"
+  | "corte_deuda"
+  | "reconexion"
+  | "retiro_equipo"
+  | "traslado"
+  | "otro";
+
+export type EstadoOrdenServicio = "pendiente" | "asignada" | "en_proceso" | "completada" | "cancelada";
+
+export interface OrdenServicio {
+  id: string;
+  nServicio: string;
+  tipoOrden: TipoOrdenServicio;
+  tipoServicio: TipoServicioRed;
+  estado: EstadoOrdenServicio;
+  contratoId: string | null;
+  contrato: { id: string; servicioContratado: { cliente: { nombreCompleto: string } } } | null;
+  fechaServicio: string;
+  abonado: string;
+  dni: string | null;
+  direccion: string;
+  referencia: string | null;
+  sector: string | null;
+  celular: string | null;
+  observacion: string | null;
+  tecnicoId: string | null;
+  tecnico: { id: string; nombre: string; apellido: string } | null;
+  fechaAsignacion: string | null;
+  fechaAceptacion: string | null;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  tiempoInstalacionMin: number | null;
+  mensualidad: number | null;
+  mbps: number | null;
+  planId: string | null;
+  plan: { id: string; nombre: string } | null;
+  ipWan: string | null;
+  pppoeUsuario: string | null;
+}
+
+export interface Tecnico {
+  id: string;
+  nombre: string;
+  apellido: string;
+  dni: string;
+  telefono: string | null;
+  email: string;
+  zona: string | null;
+  vehiculo: string | null;
+  activo: boolean;
+}
+
+export interface ProductoVariante {
+  id: string;
+  genero: string | null;
+  talla: string | null;
+  codigo: string | null;
+}
+
+export interface Producto {
+  id: string;
+  nombre: string;
+  codigo: string | null;
+  categoria: string | null;
+  unidad: string | null;
+  descripcion: string | null;
+  esMedible: boolean;
+  metrosPorUnidad: number | null;
+  metrosDisponibles: number | null;
+  tieneVariantes: boolean;
+  activo: boolean;
+  stockTotal: number;
+  stockMinimo: number;
+  variantes: ProductoVariante[];
+}
+
+export type TipoMovimientoStock = "entrada" | "salida";
+
+export interface MovimientoStock {
+  id: string;
+  productoId: string;
+  tipo: TipoMovimientoStock;
+  cantidad: number;
+  proveedor: string | null;
+  motivo: string | null;
+  createdAt: string;
 }
 
 export type EstadoServicioTecnico = "pendiente" | "liquidado";

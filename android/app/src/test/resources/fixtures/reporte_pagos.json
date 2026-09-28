@@ -1,0 +1,23 @@
+{
+ "porMetodo": {
+  "EFECTIVO": 560,
+  "YAPE": 45,
+  "PLIN": 0,
+  "TRANSFERENCIA": 0,
+  "TARJETA": 0
+ },
+ "totalIngresos": 605,
+ "totalEgresos": 778,
+ "saldoNeto": -173,
+ "cantidadPagos": 10,
+ "cantidadEgresos": 10,
+ "ingresosExternos": 230,
+ "porMetodoExternos": {
+  "EFECTIVO": 150,
+  "YAPE": 80,
+  "PLIN": 0,
+  "TRANSFERENCIA": 0,
+  "TARJETA": 0
+ },
+ "cantidadIngresosExternos": 2
+}

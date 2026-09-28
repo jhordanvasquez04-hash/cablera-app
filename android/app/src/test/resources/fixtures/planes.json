@@ -1,0 +1,35 @@
+[
+ {
+  "id": "c2a41421-d72a-4d10-838c-4cfd19d66dd0",
+  "nombre": "Internet 50 Mbps",
+  "tipoServicio": "INTERNET",
+  "mbps": 50,
+  "precio": "60",
+  "activo": true,
+  "createdAt": "2026-09-25T16:17:22.614Z",
+  "updatedAt": "2026-09-25T16:17:22.614Z",
+  "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3"
+ },
+ {
+  "id": "5d3e8c2d-3871-419d-b984-57b3804f3f69",
+  "nombre": "Internet 100 Mbps",
+  "tipoServicio": "INTERNET",
+  "mbps": 100,
+  "precio": "90",
+  "activo": true,
+  "createdAt": "2026-09-25T16:17:22.647Z",
+  "updatedAt": "2026-09-25T16:17:22.647Z",
+  "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3"
+ },
+ {
+  "id": "1a59cbba-f108-4e9d-a99e-1e626fa9109f",
+  "nombre": "Cable Basico",
+  "tipoServicio": "CABLE",
+  "mbps": null,
+  "precio": "35",
+  "activo": true,
+  "createdAt": "2026-09-25T16:17:22.665Z",
+  "updatedAt": "2026-09-25T16:17:22.665Z",
+  "empresaId": "b12eac8d-3021-4b00-907b-9ac8d288dbf3"
+ }
+]

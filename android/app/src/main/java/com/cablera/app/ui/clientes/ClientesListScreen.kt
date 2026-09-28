@@ -7,13 +7,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,10 +31,12 @@ import com.cablera.app.data.remote.dto.ClienteDto
 import com.cablera.app.ui.common.AppHeader
 import com.cablera.app.ui.common.EmptyState
 import com.cablera.app.ui.common.EstadoChip
+import com.cablera.app.ui.common.FiltroZonas
 import com.cablera.app.ui.common.HeaderSearchField
 import com.cablera.app.ui.common.LambdaViewModelFactory
 import com.cablera.app.ui.common.StateContent
 import com.cablera.app.ui.common.coloresEstadoServicio
+import com.cablera.app.ui.common.pieDeLista
 import com.cablera.app.ui.navigation.CableraBottomBar
 import com.cablera.app.ui.navigation.Routes
 import com.cablera.app.ui.theme.MonoStyles
@@ -50,7 +50,7 @@ fun ClientesListScreen(
         val container = LocalAppContainer.current
         viewModel(
             factory = LambdaViewModelFactory {
-                ClientesListViewModel(container.clientesRepository, container.zonasRepository)
+                ClientesListViewModel(container.clientesRepository, container.contratosRepository)
             },
         )
     },
@@ -71,7 +71,7 @@ fun ClientesListScreen(
                     HeaderSearchField(
                         value = uiState.busqueda,
                         onValueChange = viewModel::onBusquedaChange,
-                        placeholder = "Nombre, DNI, teléfono o caserío",
+                        placeholder = "Nombre, DNI, teléfono o correo",
                     )
                 },
             )
@@ -79,24 +79,14 @@ fun ClientesListScreen(
         bottomBar = { CableraBottomBar(navController) },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-            ) {
-                item {
-                    FilterChip(
-                        selected = uiState.filtroZonaId == null,
-                        onClick = { viewModel.onFiltroZonaChange(null) },
-                        label = { Text("Todas las zonas") },
-                    )
-                }
-                items(uiState.zonas) { zona ->
-                    FilterChip(
-                        selected = uiState.filtroZonaId == zona.id,
-                        onClick = { viewModel.onFiltroZonaChange(zona.id) },
-                        label = { Text(zona.nombre) },
-                    )
-                }
+            // El filtro por zonas solo aparece si la empresa usa sectores en sus contratos.
+            if (uiState.sectores.isNotEmpty()) {
+                FiltroZonas(
+                    sectores = uiState.sectores,
+                    seleccionado = uiState.filtroSector,
+                    onSeleccionar = viewModel::onFiltroSectorChange,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                )
             }
 
             StateContent(state = uiState.clientes, onRetry = viewModel::cargarClientes) { clientes ->
@@ -107,6 +97,7 @@ fun ClientesListScreen(
                     items(clientes, key = { it.id }) { cliente ->
                         ClienteRow(cliente = cliente, onClick = { navController.navigate(Routes.clienteFicha(cliente.id)) })
                     }
+                    pieDeLista(hayMas = uiState.hayMas, cargandoMas = uiState.cargandoMas, onVerMas = viewModel::verMas)
                 }
             }
         }
@@ -128,15 +119,12 @@ private fun ClienteRow(cliente: ClienteDto, onClick: () -> Unit) {
                 EstadoChip(texto = cliente.estadoServicio, colores = coloresEstadoServicio(cliente.estadoServicio))
             }
             Text(
-                "${cliente.zona.nombre}${cliente.direccion?.let { " · $it" } ?: ""}",
+                "${cliente.dni ?: "sin DNI"}${cliente.direccion?.let { " · $it" } ?: ""}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                Text(formatMoney(cliente.montoEfectivo), style = MonoStyles.Body)
-                if (cliente.deudaTotal > 0) {
-                    Text("Deuda: ${formatMoney(cliente.deudaTotal)}", style = MonoStyles.Body, color = MaterialTheme.colorScheme.error)
-                }
+            if (cliente.deudaTotal > 0) {
+                Text("Deuda: ${formatMoney(cliente.deudaTotal)}", style = MonoStyles.Body, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 6.dp))
             }
         }
     }

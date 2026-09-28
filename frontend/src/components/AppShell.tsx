@@ -11,6 +11,12 @@ const NAV_ITEMS = [
   { to: "/boletas", label: "Boletas", soloGestor: false },
   { to: "/caja", label: "Caja", soloGestor: true },
   { to: "/zonas", label: "Zonas", soloGestor: true },
+  { to: "/planes", label: "Planes", soloGestor: true },
+  { to: "/puntos-red", label: "Puntos de red", soloGestor: true },
+  { to: "/contratos", label: "Contratos", soloGestor: true },
+  { to: "/tecnicos", label: "Técnicos", soloGestor: true },
+  { to: "/ordenes-servicio", label: "Órdenes de servicio", soloGestor: true },
+  { to: "/almacen", label: "Almacén", soloGestor: true },
   { to: "/importar", label: "Importar", soloGestor: true },
   { to: "/configuracion", label: "Configuración", soloGestor: true },
 ];

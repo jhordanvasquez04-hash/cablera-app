@@ -27,6 +27,10 @@ data class RegistrarPagoUiState(
 
 class RegistrarPagoViewModel(
     val clienteId: String,
+    // Cuando se entra desde una tarjeta de Cobranza (un contrato puntual), la
+    // pantalla se acota a los cargos de ESE contrato — no a todos los del cliente. Null = se
+    // sigue mostrando el total del cliente (ej. si entran desde su ficha directamente).
+    private val contratoIdFiltro: String?,
     private val clientesRepository: ClientesRepository,
     private val boletasRepository: BoletasRepository,
 ) : ViewModel() {
@@ -54,7 +58,12 @@ class RegistrarPagoViewModel(
                 )
                 return@launch
             }
-            val cargos = cargosResult.getOrThrow()
+            val cargosDelCliente = cargosResult.getOrThrow()
+            val cargos = if (contratoIdFiltro != null) {
+                cargosDelCliente.filter { it.contratoId == contratoIdFiltro }
+            } else {
+                cargosDelCliente
+            }
             val todos = cargos.map { it.id }.toSet()
             _uiState.value = _uiState.value.copy(
                 cargando = false,
