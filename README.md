@@ -107,7 +107,6 @@ usuarios
 ```
 keysls/
 ├── backend/          # NestJS + Prisma + PostgreSQL
-├── frontend/         # React + Vite + Tailwind (panel del gestor)
 ├── frontend-keysls/  # Panel Keysls (React + Vite, JS): contratos, órdenes, almacén, super-admin
 ├── android/          # App móvil (gestor y técnico)
 ├── packages/shared/  # Tipos/enums compartidos entre backend y frontend
@@ -122,5 +121,5 @@ docker compose up -d
 pnpm prisma:migrate
 pnpm prisma:seed
 pnpm dev:backend    # otra terminal
-pnpm dev:frontend   # otra terminal
+pnpm dev:keysls     # otra terminal
 ```

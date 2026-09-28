@@ -8,7 +8,6 @@
 **/.env.*
 !**/.env.example
 android
-diseno-referencia
 backend/backups
 backend/uploads
 backend/prisma/seed-data

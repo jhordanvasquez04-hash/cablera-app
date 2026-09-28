@@ -52,10 +52,10 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: frontend-keysls
       args:
-        VITE_API_URL: ${VITE_API_URL:?Define VITE_API_URL}
+        # Se mantiene el nombre VITE_API_URL en Dokploy; keysls lo lee como VITE_BACKEND_URL.
+        VITE_BACKEND_URL: ${VITE_API_URL:?Define VITE_API_URL}
     restart: unless-stopped
     expose:
       - "80"
