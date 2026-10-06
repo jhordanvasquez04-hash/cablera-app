@@ -114,6 +114,18 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
+// El APK de release se entrega como "GestionL&J.apk" (en vez de app-release.apk), en app/build/entrega/.
+// Va en otra carpeta porque Gradle no admite renombrar dentro de outputs/apk/release.
+val renombrarApkRelease = tasks.register<Copy>("renombrarApkRelease") {
+    from(layout.buildDirectory.file("outputs/apk/release/app-release.apk"))
+    into(layout.buildDirectory.dir("entrega"))
+    rename { "GestionL&J.apk" }
+}
+afterEvaluate {
+    renombrarApkRelease.configure { dependsOn(tasks.named("packageRelease")) }
+    tasks.named("assembleRelease") { finalizedBy(renombrarApkRelease) }
+}
+
 // Un build de release nunca debe salir apuntando a un servidor de mentira ni por HTTP en texto plano.
 gradle.taskGraph.whenReady {
     val publicando = allTasks.any { it.project == project && (it.name == "packageRelease" || it.name == "bundleRelease") }
