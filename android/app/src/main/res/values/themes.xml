@@ -1,4 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme -->
-    <style name="Theme.Cablera" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- forceDarkAllowed=false: la app tiene su propio tema oscuro (ui/theme/Theme.kt). Sin esto,
+         Android/MIUI la "oscurecía" por su cuenta invirtiendo colores y dejaba letras ilegibles. -->
+    <style name="Theme.Cablera" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+    </style>
 </resources>

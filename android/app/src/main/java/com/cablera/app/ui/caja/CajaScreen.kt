@@ -1,5 +1,8 @@
 package com.cablera.app.ui.caja
 
+import com.cablera.app.ui.theme.colorCabecera
+import androidx.compose.ui.graphics.Color
+import com.cablera.app.ui.common.ItemAnimado
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
@@ -109,8 +112,8 @@ fun CajaScreen(
             StateContent(state = uiState.resumen, onRetry = viewModel::cargar) { resumen ->
                 LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     item {
-                        Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)) {
-                            val onHero = MaterialTheme.colorScheme.onPrimary
+                        Card(shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = colorCabecera())) {
+                            val onHero = Color.White
                             Column(modifier = Modifier.padding(18.dp)) {
                                 Text("Ingresos menos egresos", style = MaterialTheme.typography.labelSmall, color = onHero.copy(alpha = 0.7f))
                                 Text(formatMoney(resumen.neto), style = MonoStyles.Display, color = onHero)
@@ -172,7 +175,7 @@ fun CajaScreen(
                             if (movimientos.data.isEmpty()) {
                                 item { EmptyState(mensaje = "No hay movimientos con este filtro en este mes.") }
                             }
-                            items(movimientos.data, key = { it.id }) { movimiento -> MovimientoRow(movimiento) }
+                            items(movimientos.data, key = { it.id }) { movimiento -> ItemAnimado { MovimientoRow(movimiento) } }
                             pieDeLista(hayMas = uiState.hayMasMovimientos, cargandoMas = uiState.cargandoMasMovimientos, onVerMas = viewModel::verMasMovimientos)
                         }
                     }

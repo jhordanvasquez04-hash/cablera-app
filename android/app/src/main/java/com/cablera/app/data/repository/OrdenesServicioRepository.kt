@@ -50,6 +50,14 @@ class OrdenesServicioRepository(private val apiService: ApiService, private val 
                 sector = request.sector,
                 celular = request.celular,
                 observacion = request.observacion,
+                planId = request.planId,
+                mbps = request.mbps,
+                mensualidad = request.mensualidad,
+                ipWan = request.ipWan,
+                mascara = request.mascara,
+                gateway = request.gateway,
+                pppoeUsuario = request.pppoeUsuario,
+                pppoePassword = request.pppoePassword,
             ),
         )
         val final = if (request.tecnicoId != null) {

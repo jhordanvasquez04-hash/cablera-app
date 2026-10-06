@@ -123,7 +123,7 @@ fun BoletaDetalleScreen(
                         if (procesandoAccion) {
                             CircularProgressIndicator(
                                 modifier = Modifier.padding(8.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
+                                color = Color.White,
                             )
                         } else {
                             IconButton(onClick = {
@@ -133,7 +133,7 @@ fun BoletaDetalleScreen(
                                     procesandoAccion = false
                                 }
                             }) {
-                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = MaterialTheme.colorScheme.onPrimary)
+                                Icon(Icons.Filled.Print, contentDescription = "Imprimir", tint = Color.White)
                             }
                             IconButton(onClick = {
                                 scope.launch {
@@ -142,7 +142,7 @@ fun BoletaDetalleScreen(
                                     procesandoAccion = false
                                 }
                             }) {
-                                Icon(Icons.Filled.Share, contentDescription = "Compartir", tint = MaterialTheme.colorScheme.onPrimary)
+                                Icon(Icons.Filled.Share, contentDescription = "Compartir", tint = Color.White)
                             }
                         }
                     }
@@ -212,11 +212,25 @@ private const val TAG_BOLETA = "BoletaDetalle"
  * registra y se avisa con un Toast en vez de dejar que la excepción tumbe la app. */
 private suspend fun ejecutarConBitmap(context: Context, graphicsLayer: GraphicsLayer, accion: (Bitmap) -> Unit) {
     try {
-        val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
-        accion(bitmap)
+        accion(sobreFondoBlanco(graphicsLayer.toImageBitmap().asAndroidBitmap()))
     } catch (e: Exception) {
         Log.e(TAG_BOLETA, "No se pudo generar/compartir la imagen de la boleta", e)
         Toast.makeText(context, "No se pudo generar la imagen del comprobante", Toast.LENGTH_LONG).show()
+    }
+}
+
+/**
+ * La captura de la capa es un bitmap de hardware y con las esquinas redondeadas de la tarjeta transparentes:
+ * el servicio de impresión (y varios visores) lo pintan de NEGRO. Se copia a un bitmap normal y se
+ * dibuja sobre blanco, para que el papel salga siempre blanco con el comprobante encima.
+ */
+private fun sobreFondoBlanco(origen: Bitmap): Bitmap {
+    val normal = origen.copy(Bitmap.Config.ARGB_8888, false) ?: error("No se pudo copiar la imagen del comprobante")
+    return Bitmap.createBitmap(normal.width, normal.height, Bitmap.Config.ARGB_8888).also { destino ->
+        android.graphics.Canvas(destino).apply {
+            drawColor(android.graphics.Color.WHITE)
+            drawBitmap(normal, 0f, 0f, null)
+        }
     }
 }
 
@@ -362,7 +376,8 @@ private fun EncabezadoEmpresa(configuracion: ConfiguracionDto?) {
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
+                // Colores fijos: el comprobante es siempre blanco (se imprime), también en modo oscuro
+                .background(Ink),
             contentAlignment = Alignment.Center,
         ) {
             RemoteImage(
@@ -370,7 +385,7 @@ private fun EncabezadoEmpresa(configuracion: ConfiguracionDto?) {
                 contentDescription = null,
                 modifier = Modifier.size(48.dp).clip(CircleShape),
                 placeholder = {
-                    Text(iniciales(nombreEmpresa), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimary)
+                    Text(iniciales(nombreEmpresa), style = MaterialTheme.typography.titleMedium, color = Color.White)
                 },
             )
         }
@@ -398,5 +413,5 @@ private fun EncabezadoEmpresa(configuracion: ConfiguracionDto?) {
 
 @Composable
 private fun DashedDivider() {
-    HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = MaterialTheme.colorScheme.outlineVariant)
+    HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = Color(0xFFE6E6E9)) // fijo: el comprobante siempre es blanco
 }

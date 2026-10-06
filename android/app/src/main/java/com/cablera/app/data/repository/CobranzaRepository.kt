@@ -57,6 +57,10 @@ class CobranzaRepository(
         val pagosHoy = async { runCatching { apiService.listarPagos(fechaDesde = hoy.toString(), fechaHasta = hoy.toString()) }.getOrDefault(emptyList()) }
 
         val k = kpis.await()
+        // Contratos con deuda en cualquier estado, como la web. Si el backend todavía no manda el
+        // total, se cuenta con la lista de contratos con deuda (sin paginar).
+        val contratosConDeuda = k.contratosConDeuda
+            ?: runCatching { apiService.listarContratos(conDeuda = true).size }.getOrDefault(k.contratosActivosConDeuda)
         val propios = pagosHoy.await().filter { it.usuarioId == usuarioId && !it.anulado }
         ResumenCobranzaDto(
             cobradoMes = k.recaudadoMes,
@@ -64,6 +68,7 @@ class CobranzaRepository(
             contratosActivos = k.contratosActivos,
             contratosActivosConDeuda = k.contratosActivosConDeuda,
             deudaContratosActivos = k.deudaContratosActivos,
+            contratosConDeuda = contratosConDeuda,
             clientesConDeudaCount = k.clientesConDeuda,
             cobradoHoyPorUsuario = propios.sumOf { it.monto },
             cobrosHoyPorUsuarioCount = propios.size,

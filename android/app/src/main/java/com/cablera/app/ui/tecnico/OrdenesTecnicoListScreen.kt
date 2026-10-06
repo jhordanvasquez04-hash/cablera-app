@@ -1,5 +1,7 @@
 package com.cablera.app.ui.tecnico
 
+import androidx.compose.runtime.remember
+import com.cablera.app.ui.common.ItemAnimado
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -87,8 +89,9 @@ fun OrdenesTecnicoListScreen(
                     if (ordenes.isEmpty()) {
                         item { EmptyState(mensaje = "No tienes órdenes con este filtro.", icon = Icons.Filled.Assignment) }
                     }
-                    items(ordenes, key = { it.id }) { orden ->
+                    items(ordenes, key = { it.id }) { orden -> ItemAnimado {
                         OrdenCard(orden = orden, onClick = { navController.navigate(Routes.ordenTecnicoDetalle(orden.id)) })
+                    }
                     }
                 }
             }

@@ -3,6 +3,8 @@ package com.cablera.app.ui.clientes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cablera.app.data.remote.dto.ClienteDto
+import com.cablera.app.data.remote.dto.Roles
+import com.cablera.app.data.repository.AuthRepository
 import com.cablera.app.data.repository.ClientesRepository
 import com.cablera.app.data.repository.ContratosRepository
 import com.cablera.app.ui.common.UiState
@@ -22,11 +24,13 @@ data class ClientesListUiState(
     val filtroSector: String? = null,
     /** Zonas que usa la empresa; vacío = no usa zonas y el filtro no se muestra. */
     val sectores: List<String> = emptyList(),
+    val rolGestor: Boolean = false,
 )
 
 class ClientesListViewModel(
     private val clientesRepository: ClientesRepository,
     private val contratosRepository: ContratosRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ClientesListUiState())
@@ -35,6 +39,10 @@ class ClientesListViewModel(
     private var searchJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            val sesion = authRepository.currentSession()
+            _uiState.value = _uiState.value.copy(rolGestor = sesion?.usuario?.rol == Roles.GESTOR)
+        }
         cargarClientes()
     }
 

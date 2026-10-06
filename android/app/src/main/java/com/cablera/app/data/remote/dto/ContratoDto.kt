@@ -37,6 +37,7 @@ data class ContratoDto(
     val clienteTelefono: String? = null,
     val planId: String? = null,
     val planNombre: String? = null,
+    val mbps: Int? = null,
     val costoMensual: Double = 0.0,
     val diaCorte: Int? = null,
     val deudaPendiente: Double = 0.0,

@@ -1,5 +1,6 @@
 package com.cablera.app.ui.pagos
 
+import com.cablera.app.ui.common.ItemAnimado
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,7 +17,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -91,12 +91,13 @@ fun RegistrarPagoScreen(
                     item { Text("Este cliente no tiene cargos pendientes.") }
                 }
 
-                items(uiState.cargos, key = { it.id }) { cargo ->
+                items(uiState.cargos, key = { it.id }) { cargo -> ItemAnimado {
                     CargoSeleccionableRow(
                         cargo = cargo,
                         seleccionado = cargo.id in uiState.seleccionados,
                         onToggle = { viewModel.toggleCargo(cargo.id) },
                     )
+                }
                 }
 
                 if (uiState.cargos.isNotEmpty()) {
@@ -141,21 +142,12 @@ fun RegistrarPagoScreen(
                     }
 
                     item {
-                        Column {
-                            Button(
-                                onClick = { viewModel.registrar(onPagoRegistrado) },
-                                enabled = !uiState.enviando && uiState.seleccionados.isNotEmpty(),
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text(if (uiState.enviando) "Registrando..." else "Registrar pago")
-                            }
-                            OutlinedButton(
-                                onClick = { viewModel.registrar { navController.popBackStack() } },
-                                enabled = !uiState.enviando && uiState.seleccionados.isNotEmpty(),
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            ) {
-                                Text("Guardar sin imprimir")
-                            }
+                        Button(
+                            onClick = { viewModel.registrar(onPagoRegistrado) },
+                            enabled = !uiState.enviando && uiState.seleccionados.isNotEmpty(),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(if (uiState.enviando) "Registrando..." else "Registrar pago")
                         }
                     }
                 }

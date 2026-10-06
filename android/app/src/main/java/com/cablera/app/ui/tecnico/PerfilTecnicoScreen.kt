@@ -18,6 +18,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import com.cablera.app.ui.common.ConfirmarCerrarSesionDialog
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +48,14 @@ fun PerfilTecnicoScreen(
     val container = LocalAppContainer.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    // Antes de cerrar sesión se pregunta (ver ConfirmarCerrarSesionDialog)
+    var confirmarSalida by remember { mutableStateOf(false) }
+    if (confirmarSalida) {
+        ConfirmarCerrarSesionDialog(
+            onConfirmar = { confirmarSalida = false; scope.launch { container.tecnicoAuthRepository.logout() } },
+            onCancelar = { confirmarSalida = false },
+        )
+    }
 
     Scaffold(
         topBar = { AppHeader(titulo = "Perfil") },
@@ -89,7 +101,7 @@ fun PerfilTecnicoScreen(
                 }
 
                 OutlinedButton(
-                    onClick = { scope.launch { container.tecnicoAuthRepository.logout() } },
+                    onClick = { confirmarSalida = true },
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
                 ) {
                     Text("Cerrar sesión")

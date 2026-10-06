@@ -1,5 +1,6 @@
 package com.cablera.app.ui.contratos
 
+import com.cablera.app.ui.common.ItemAnimado
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,7 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -71,9 +72,8 @@ fun ContratosListScreen(
         },
         bottomBar = { CableraBottomBar(navController) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = { navController.navigate(Routes.CONTRATO_NUEVO) }) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Text("Nuevo contrato", modifier = Modifier.padding(start = 8.dp))
+            FloatingActionButton(onClick = { navController.navigate(Routes.CONTRATO_NUEVO) }) {
+                Icon(Icons.Filled.Add, contentDescription = "Nuevo contrato")
             }
         },
     ) { padding ->
@@ -95,8 +95,9 @@ fun ContratosListScreen(
                     if (contratos.isEmpty()) {
                         item { EmptyState(mensaje = "No hay contratos que coincidan.", icon = Icons.AutoMirrored.Filled.Article) }
                     }
-                    items(contratos, key = { it.id }) { contrato ->
+                    items(contratos, key = { it.id }) { contrato -> ItemAnimado {
                         ContratoCard(contrato = contrato, onClick = { navController.navigate(Routes.contratoDetalle(contrato.id)) })
+                    }
                     }
                     pieDeLista(hayMas = uiState.hayMas, cargandoMas = uiState.cargandoMas, onVerMas = viewModel::verMas)
                 }

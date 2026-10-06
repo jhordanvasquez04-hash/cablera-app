@@ -1,10 +1,20 @@
 package com.cablera.app.ui.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -72,7 +82,14 @@ fun CableraNavHost(
         }
     }
 
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        enterTransition = { if (entreTabs()) fadeIn(tween(220)) else slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { it / 3 } + fadeIn(tween(320)) },
+        exitTransition = { if (entreTabs()) fadeOut(tween(160)) else slideOutHorizontally(tween(320, easing = FastOutSlowInEasing)) { -it / 5 } + fadeOut(tween(260)) },
+        popEnterTransition = { if (entreTabs()) fadeIn(tween(220)) else slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { -it / 5 } + fadeIn(tween(320)) },
+        popExitTransition = { if (entreTabs()) fadeOut(tween(160)) else slideOutHorizontally(tween(320, easing = FastOutSlowInEasing)) { it / 3 } + fadeOut(tween(260)) },
+    ) {
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = {
@@ -214,3 +231,13 @@ fun CableraNavHost(
         }
     }
 }
+
+// Pantallas de la barra inferior: entre ellas se cambia con un fundido (como pestañas); todo lo
+// demás (detalles, formularios, login) entra deslizándose desde la derecha.
+private val RUTAS_TABS = setOf(
+    Routes.HOME, Routes.CLIENTES, Routes.CONTRATOS, Routes.CAJA, Routes.CONFIGURACION, Routes.PERFIL,
+    Routes.ORDENES_TECNICO, Routes.PERFIL_TECNICO,
+)
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.entreTabs(): Boolean =
+    initialState.destination.route in RUTAS_TABS && targetState.destination.route in RUTAS_TABS

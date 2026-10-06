@@ -28,6 +28,8 @@ class ClientesRepository(
     private val apiService: ApiService,
     private val cache: ApiCache,
     private val contratosRepository: ContratosRepository,
+    /** null = gestor (ve todos los pagos); si no, solo los registrados por ese usuario. */
+    private val soloPagosDe: suspend () -> String? = { null },
 ) {
 
     suspend fun listarEnCache(busqueda: String?, sector: String?, offset: Int): Pagina<ClienteDto>? =
@@ -148,6 +150,7 @@ class ClientesRepository(
         val cliente = armarCliente(id)
         val cargos = async { cargosDe(cliente) }
         // Los pagos no se pueden filtrar por cliente: se busca por su DNI/RUC y se acota a sus contratos.
+        val propietario = soloPagosDe()
         val pagos = async {
             val idsContratos = cliente.contratos.map { it.id }.toSet()
             if (cliente.dni.isNullOrBlank()) {
@@ -155,6 +158,7 @@ class ClientesRepository(
             } else {
                 apiService.listarPagos(q = cliente.dni, limit = TAMANO_PAGINA)
                     .filter { pago -> pago.cargos.any { it.cargo.contrato.id in idsContratos } }
+                    .filter { propietario == null || it.usuarioId == propietario }
                     .map { it.toBoletaResumen() }
             }
         }

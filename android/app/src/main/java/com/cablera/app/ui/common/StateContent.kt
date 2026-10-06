@@ -1,5 +1,10 @@
 package com.cablera.app.ui.common
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,10 +27,19 @@ fun <T> StateContent(
     onRetry: (() -> Unit)? = null,
     content: @Composable (T) -> Unit,
 ) {
-    when (state) {
-        is UiState.Loading -> LoadingBox(modifier)
-        is UiState.Error -> ErrorBox(message = state.message, modifier = modifier, onRetry = onRetry)
-        is UiState.Success -> Box(modifier = modifier) { content(state.data) }
+    // Fundido entre "cargando", "error" y el contenido. contentKey = tipo de estado: si solo cambian
+    // los datos (ej. al refrescar) no se repite la animación, se actualiza en el lugar.
+    AnimatedContent(
+        targetState = state,
+        contentKey = { it::class },
+        transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(160)) },
+        label = "estadoPantalla",
+    ) { actual ->
+        when (actual) {
+            is UiState.Loading -> LoadingBox(modifier)
+            is UiState.Error -> ErrorBox(message = actual.message, modifier = modifier, onRetry = onRetry)
+            is UiState.Success -> Box(modifier = modifier) { content(actual.data) }
+        }
     }
 }
 

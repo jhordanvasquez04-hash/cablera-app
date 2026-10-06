@@ -19,6 +19,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import com.cablera.app.ui.common.ConfirmarCerrarSesionDialog
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +41,14 @@ fun PerfilScreen(navController: NavHostController) {
     val container = LocalAppContainer.current
     val session by container.authRepository.session.collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
+    // Antes de cerrar sesión se pregunta (ver ConfirmarCerrarSesionDialog)
+    var confirmarSalida by remember { mutableStateOf(false) }
+    if (confirmarSalida) {
+        ConfirmarCerrarSesionDialog(
+            onConfirmar = { confirmarSalida = false; scope.launch { container.authRepository.logout() } },
+            onCancelar = { confirmarSalida = false },
+        )
+    }
 
     Scaffold(
         topBar = { AppHeader(titulo = "Perfil") },
@@ -78,7 +90,7 @@ fun PerfilScreen(navController: NavHostController) {
             }
 
             OutlinedButton(
-                onClick = { scope.launch { container.authRepository.logout() } },
+                onClick = { confirmarSalida = true },
                 modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
             ) {
                 Text("Cerrar sesión")

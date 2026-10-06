@@ -7,6 +7,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.cablera.app.data.cache.ApiCache
 import com.cablera.app.data.remote.ApiJson
 import com.cablera.app.data.remote.ApiService
+import com.cablera.app.data.remote.dto.Roles
 import com.cablera.app.data.remote.ApiServiceTecnico
 import com.cablera.app.data.remote.AuthHeaderInterceptor
 import com.cablera.app.data.remote.SessionExpiredInterceptor
@@ -112,8 +113,14 @@ class AppContainer(context: Context) {
     val authRepository: AuthRepository = AuthRepository(apiService, sessionManager, apiCache)
     val contratosRepository: ContratosRepository = ContratosRepository(apiService, apiCache)
     val cobranzaRepository: CobranzaRepository = CobranzaRepository(apiService, apiCache) { sessionManager.currentSession()?.usuario?.id }
-    val clientesRepository: ClientesRepository = ClientesRepository(apiService, apiCache, contratosRepository)
-    val boletasRepository: BoletasRepository = BoletasRepository(apiService, apiCache)
+    // Cobrador/secretaria solo ven los pagos que registraron ellos; el gestor, todos (null). Si no
+    // hay sesión se devuelve "" (no coincide con ningún pago) en vez de abrir todo.
+    private val soloPagosDe: suspend () -> String? = {
+        val usuario = sessionManager.currentSession()?.usuario
+        if (usuario?.rol == Roles.GESTOR) null else usuario?.id.orEmpty()
+    }
+    val clientesRepository: ClientesRepository = ClientesRepository(apiService, apiCache, contratosRepository, soloPagosDe)
+    val boletasRepository: BoletasRepository = BoletasRepository(apiService, apiCache, soloPagosDe)
     val configuracionRepository: ConfiguracionRepository = ConfiguracionRepository(apiService, apiCache)
     val cajaRepository: CajaRepository = CajaRepository(apiService, apiCache)
     val ordenesServicioRepository: OrdenesServicioRepository = OrdenesServicioRepository(apiService, apiCache)
@@ -135,7 +142,7 @@ class AppContainer(context: Context) {
     // Colores/logo de la EMPRESA de quien tiene sesión iniciada — usados por CableraTheme y por la
     // pantalla de Ajustes. `GET /configuracion` requiere sesión a propósito: antes de iniciar sesión
     // no hay forma de saber de qué empresa es la persona (varias empresas comparten la misma app),
-    // así que [LoginScreen] nunca lee este estado y siempre se ve con la marca neutra de CableGestion
+    // así que [LoginScreen] nunca lee este estado y siempre se ve con la marca neutra de L&J Tech
     // (los colores por defecto de [CableraTheme] cuando `configuracion` es null). Ajustes actualiza
     // este mismo estado al guardar cambios, para que el tema se repinte al toque.
     val configuracionState: MutableStateFlow<ConfiguracionDto?> = MutableStateFlow(null)

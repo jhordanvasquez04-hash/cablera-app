@@ -13,13 +13,19 @@ import com.cablera.app.data.remote.dto.KCargo
 import com.cablera.app.data.remote.dto.KRegistrarPagoRequest
 import com.cablera.app.data.remote.safeApiCall
 import java.time.Instant
+import java.time.LocalDate
 
 /**
  * "Boletas" de la app = pagos de Keysls (el comprobante de cada pago). Un pago de Keysls es de UN
  * solo contrato; si el cobro abarca cargos de varios contratos del cliente, se registra un pago por
  * contrato y se devuelve el primero.
  */
-class BoletasRepository(private val apiService: ApiService, private val cache: ApiCache) {
+class BoletasRepository(
+    private val apiService: ApiService,
+    private val cache: ApiCache,
+    /** null = el gestor, que ve todos los pagos; si no, el id del usuario cuyos pagos (los que él registró) son los únicos visibles. */
+    private val soloPagosDe: suspend () -> String? = { null },
+) {
 
     suspend fun registrarPago(
         clienteId: String,
@@ -70,22 +76,45 @@ class BoletasRepository(private val apiService: ApiService, private val cache: A
         cache.guardar("boleta:${it.id}", it)
     }
 
-    suspend fun listarEnCache(busqueda: String?, offset: Int): Pagina<BoletaResumenDto>? = cache.leer(claveLista(busqueda, offset))
+    suspend fun listarEnCache(busqueda: String?, offset: Int, desde: LocalDate? = null, hasta: LocalDate? = null): Pagina<BoletaResumenDto>? =
+        cache.leer(claveLista(busqueda, offset, desde, hasta, soloPagosDe()))
 
-    /** Una página de pagos (10), del más reciente al más antiguo. */
-    suspend fun listar(busqueda: String?, offset: Int): Result<Pagina<BoletaResumenDto>> =
-        cache.obtener(claveLista(busqueda, offset), CacheTtl.LISTA) {
+    /**
+     * Una página de pagos (10), del más reciente al más antiguo; [desde] y [hasta] (inclusive) acotan por fecha del pago.
+     * Cobrador/secretaria: solo los que registró él. La API no filtra por usuario, así que se trae el rango
+     * completo (hasta [MAX_PARA_FILTRAR]) y se pagina aquí.
+     */
+    suspend fun listar(busqueda: String?, offset: Int, desde: LocalDate? = null, hasta: LocalDate? = null): Result<Pagina<BoletaResumenDto>> {
+        val propietario = soloPagosDe()
+        return cache.obtener(claveLista(busqueda, offset, desde, hasta, propietario), CacheTtl.LISTA) {
             safeApiCall {
                 val q = busqueda?.trim()?.takeIf { it.isNotEmpty() }
-                val pagina = paginar(offset) { limit, desde -> apiService.listarPagos(q = q, limit = limit, offset = desde) }
-                Pagina(pagina.items.map { it.toBoletaResumen() }, pagina.hayMas)
+                // El backend espera AAAA-MM-DD, que es justo lo que da LocalDate.toString().
+                if (propietario == null) {
+                    val pagina = paginar(offset) { limit, inicio ->
+                        apiService.listarPagos(q = q, fechaDesde = desde?.toString(), fechaHasta = hasta?.toString(), limit = limit, offset = inicio)
+                    }
+                    Pagina(pagina.items.map { it.toBoletaResumen() }, pagina.hayMas)
+                } else {
+                    val propios = apiService
+                        .listarPagos(q = q, fechaDesde = desde?.toString(), fechaHasta = hasta?.toString(), limit = MAX_PARA_FILTRAR)
+                        .filter { it.usuarioId == propietario }
+                        .drop(offset)
+                    Pagina(propios.take(TAMANO_PAGINA).map { it.toBoletaResumen() }, propios.size > TAMANO_PAGINA)
+                }
             }
         }
+    }
 
     suspend fun obtenerEnCache(id: String): BoletaDetalleDto? = cache.leer("boleta:$id")
 
     suspend fun obtener(id: String): Result<BoletaDetalleDto> =
         cache.obtener("boleta:$id", CacheTtl.LISTA) { safeApiCall { apiService.obtenerPago(id).toBoletaDetalle() } }
 
-    private fun claveLista(busqueda: String?, offset: Int) = "boletas:${busqueda.orEmpty().trim()}|$offset"
+    private fun claveLista(busqueda: String?, offset: Int, desde: LocalDate?, hasta: LocalDate?, propietario: String?) =
+        "boletas:${propietario.orEmpty()}|${busqueda.orEmpty().trim()}|${desde ?: ""}|${hasta ?: ""}|$offset"
+
+    private companion object {
+        const val MAX_PARA_FILTRAR = 1000
+    }
 }

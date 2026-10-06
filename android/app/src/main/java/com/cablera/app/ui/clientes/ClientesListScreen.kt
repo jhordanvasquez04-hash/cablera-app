@@ -1,5 +1,6 @@
 package com.cablera.app.ui.clientes
 
+import com.cablera.app.ui.common.ItemAnimado
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,8 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -50,7 +54,7 @@ fun ClientesListScreen(
         val container = LocalAppContainer.current
         viewModel(
             factory = LambdaViewModelFactory {
-                ClientesListViewModel(container.clientesRepository, container.contratosRepository)
+                ClientesListViewModel(container.clientesRepository, container.contratosRepository, container.authRepository)
             },
         )
     },
@@ -77,6 +81,14 @@ fun ClientesListScreen(
             )
         },
         bottomBar = { CableraBottomBar(navController) },
+        floatingActionButton = {
+            if (uiState.rolGestor) {
+                // Nuevo cliente: valida el DNI y, si ya existe, ofrece ir a su contrato.
+                FloatingActionButton(onClick = { navController.navigate(Routes.CLIENTE_NUEVO) }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Nuevo cliente")
+                }
+            }
+        },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             // El filtro por zonas solo aparece si la empresa usa sectores en sus contratos.
@@ -94,8 +106,9 @@ fun ClientesListScreen(
                     if (clientes.isEmpty()) {
                         item { EmptyState(mensaje = "No hay clientes que coincidan.", icon = Icons.Filled.People) }
                     }
-                    items(clientes, key = { it.id }) { cliente ->
+                    items(clientes, key = { it.id }) { cliente -> ItemAnimado {
                         ClienteRow(cliente = cliente, onClick = { navController.navigate(Routes.clienteFicha(cliente.id)) })
+                    }
                     }
                     pieDeLista(hayMas = uiState.hayMas, cargandoMas = uiState.cargandoMas, onVerMas = viewModel::verMas)
                 }

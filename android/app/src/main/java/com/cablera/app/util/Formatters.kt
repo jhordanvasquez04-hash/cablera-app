@@ -14,6 +14,7 @@ val ZONA_PERU: ZoneId = ZoneId.of("America/Lima")
 
 private val fechaCortaFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", LOCALE_PE)
 private val fechaHoraFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", LOCALE_PE)
+private val diaMesFormatter = DateTimeFormatter.ofPattern("dd/MM", LOCALE_PE)
 
 val NOMBRES_MES = listOf(
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -23,6 +24,10 @@ val NOMBRES_MES = listOf(
 fun formatMoney(monto: Double): String = "S/ %.2f".format(LOCALE_PE, monto)
 
 fun nombreMes(mes: Int): String = NOMBRES_MES.getOrElse(mes - 1) { "" }
+
+/** Rango de días para etiquetas cortas: "28/09/2026" si es un solo día, si no "01/09 – 28/09". */
+fun formatRangoFechas(desde: LocalDate, hasta: LocalDate): String =
+    if (desde == hasta) desde.format(fechaCortaFormatter) else "${desde.format(diaMesFormatter)} – ${hasta.format(diaMesFormatter)}"
 
 fun formatFechaCorta(iso: String): String = try {
     OffsetDateTime.parse(iso).toLocalDate().format(fechaCortaFormatter)

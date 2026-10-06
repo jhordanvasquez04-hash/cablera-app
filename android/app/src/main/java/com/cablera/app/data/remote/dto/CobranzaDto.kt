@@ -16,6 +16,8 @@ data class ResumenCobranzaDto(
     /** Contratos activos que tienen deuda, y cuánto suman. */
     val contratosActivosConDeuda: Int,
     val deudaContratosActivos: Double,
+    /** Contratos con deuda en cualquier estado (activos, suspendidos, cortados, de baja): el mismo número que la web. */
+    val contratosConDeuda: Int = contratosActivosConDeuda,
     val clientesConDeudaCount: Int,
     val cobradoHoyPorUsuario: Double,
     val cobrosHoyPorUsuarioCount: Int,

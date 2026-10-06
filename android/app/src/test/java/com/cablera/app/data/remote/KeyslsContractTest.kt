@@ -246,6 +246,7 @@ class KeyslsContractTest {
         assertTrue(k.contratosActivos > 0)
         assertTrue("la deuda de contratos activos no supera la deuda total", k.deudaContratosActivos <= k.deudaTotal)
         assertTrue(k.contratosActivosConDeuda <= k.contratosActivos)
+        assertEquals(15, k.contratosConDeuda)
         val reporte = leer<KReportePagos>("reporte_pagos")
         assertTrue(reporte.porMetodo.keys.containsAll(listOf("EFECTIVO", "YAPE", "PLIN", "TRANSFERENCIA")))
         assertEquals(reporte.totalIngresos - reporte.totalEgresos, reporte.saldoNeto, 0.001)

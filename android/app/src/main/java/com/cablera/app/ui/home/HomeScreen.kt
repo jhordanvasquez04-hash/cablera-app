@@ -1,5 +1,7 @@
 package com.cablera.app.ui.home
 
+import androidx.compose.ui.graphics.Color
+import com.cablera.app.ui.common.ItemAnimado
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -84,14 +86,14 @@ fun HomeScreen(
             AppHeader(
                 titulo = "Cobranza",
                 actions = {
-                    // Fusión con Keysls, alcance mínimo en el celular (ver Routes.kt): ambos
-                    // roles pueden VER (igual que el backend); asignar/cancelar/editar queda
-                    // acotado dentro de cada pantalla según el rol.
-                    IconButton(onClick = { navController.navigate(Routes.ORDENES_SERVICIO) }) {
-                        Icon(Icons.Filled.Assignment, contentDescription = "Servicios técnicos", tint = MaterialTheme.colorScheme.onPrimary)
+                    // Servicios técnicos: solo el gestor. Cobrador/secretaria no los ven.
+                    if (uiState.rolGestor) {
+                        IconButton(onClick = { navController.navigate(Routes.ORDENES_SERVICIO) }) {
+                            Icon(Icons.Filled.Assignment, contentDescription = "Servicios técnicos", tint = Color.White)
+                        }
                     }
                     IconButton(onClick = { navController.navigate(Routes.BOLETAS) }) {
-                        Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Ver pagos", tint = MaterialTheme.colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = "Ver pagos", tint = Color.White)
                     }
                 },
                 contenidoExtra = {
@@ -106,12 +108,6 @@ fun HomeScreen(
         bottomBar = { CableraBottomBar(navController) },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            if (uiState.rolGestor) {
-                OutlinedButton(
-                    onClick = { navController.navigate(Routes.CLIENTE_NUEVO) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                ) { Text("+ Nuevo cliente") }
-            }
             ResumenContent(
                 uiState = uiState,
                 onReintentar = viewModel::cargar,
@@ -144,15 +140,11 @@ private fun ResumenContent(
                 val resumen = r.data
                 // Tres tarjetas en una fila que se desliza hacia la izquierda: se ven dos y un pedazo de la
                 // tercera, para que se note que hay más.
-                item {
+                // Cobrador/secretaria: sin indicadores ni totales, solo la lista para cobrar.
+                if (uiState.rolGestor) item {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (uiState.rolGestor) {
-                            item { KpiCard("Cobrado este mes", formatMoney(resumen.cobradoMes), "Pagos registrados") }
-                            item { KpiCard("Deuda acumulada", formatMoney(resumen.deudaAcumulada), "Saldo pendiente") }
-                        } else {
-                            item { KpiCard("Cobrado hoy por ti", formatMoney(resumen.cobradoHoyPorUsuario), "${resumen.cobrosHoyPorUsuarioCount} cobros") }
-                            item { KpiCard("Pendientes", "${resumen.contratosActivosConDeuda}", "contratos activos con deuda") }
-                        }
+                        item { KpiCard("Cobrado este mes", formatMoney(resumen.cobradoMes), "Pagos registrados") }
+                        item { KpiCard("Deuda acumulada", formatMoney(resumen.deudaAcumulada), "Saldo pendiente") }
                         item {
                             KpiCard(
                                 "Contratos activos",
@@ -181,13 +173,14 @@ private fun ResumenContent(
                 }
                 // Lo que se cobra mes a mes es cada CONTRATO, no el cliente: un cliente con varios
                 // contratos aparece varias veces, uno por cada uno con deuda.
-                items(c.data, key = { it.contratoId }) { contrato ->
+                items(c.data, key = { it.contratoId }) { contrato -> ItemAnimado {
                     ContratoConDeudaCard(
                         contrato = contrato,
                         onCobrar = { onCobrar(contrato.clienteId, contrato.contratoId) },
                         onClick = { onCobrar(contrato.clienteId, contrato.contratoId) },
                         onLlamar = contrato.telefono?.let { telefono -> { onLlamar(telefono) } },
                     )
+                }
                 }
                 pieDeLista(hayMas = uiState.hayMas, cargandoMas = uiState.cargandoMas, onVerMas = onVerMas)
             }

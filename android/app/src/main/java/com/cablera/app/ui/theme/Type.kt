@@ -17,6 +17,7 @@ val PlexSans = FontFamily(
     Font(R.font.ibm_plex_sans_variable, weight = FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
     Font(R.font.ibm_plex_sans_variable, weight = FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
     Font(R.font.ibm_plex_sans_variable, weight = FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.ibm_plex_sans_variable, weight = FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
 )
 
 /** Source Serif 4 — solo títulos de pantalla, siempre regular (nunca negrita). */
@@ -32,8 +33,10 @@ val PlexMono = FontFamily(
 )
 
 val Typography = Typography(
-    displayLarge = TextStyle(fontFamily = SourceSerif4, fontWeight = FontWeight.Normal, fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = (-0.01f).em),
-    headlineSmall = TextStyle(fontFamily = SourceSerif4, fontWeight = FontWeight.Normal, fontSize = 21.sp, lineHeight = 26.sp, letterSpacing = (-0.01f).em),
+    // Títulos grandes y de diálogos en la misma letra que el resto (antes Source Serif, con serifas:
+    // no combinaba con el diseño en blanco y negro).
+    displayLarge = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.Bold, fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = (-0.02f).em),
+    headlineSmall = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp, letterSpacing = (-0.01f).em),
     titleLarge = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp),
     titleMedium = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp),
     bodyLarge = TextStyle(fontFamily = PlexSans, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp),

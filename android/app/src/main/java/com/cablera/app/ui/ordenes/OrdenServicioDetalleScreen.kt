@@ -1,5 +1,6 @@
 package com.cablera.app.ui.ordenes
 
+import com.cablera.app.ui.theme.colorCabecera
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -273,12 +274,12 @@ private fun CompletarSheet(orden: OrdenServicioDto, uiState: OrdenServicioDetall
 private fun Encabezado(orden: OrdenServicioDto) {
     val colores = coloresEstadoOrden(orden.estado)
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+        colors = CardDefaults.cardColors(containerColor = colorCabecera()),
         shape = RoundedCornerShape(18.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            val sobreAzul = MaterialTheme.colorScheme.onPrimary
+            val sobreAzul = Color.White
             Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(orden.nServicio, style = MonoStyles.Body, color = sobreAzul.copy(alpha = 0.75f))
                 EstadoChip(texto = orden.estado.replace("_", " "), colores = colores)

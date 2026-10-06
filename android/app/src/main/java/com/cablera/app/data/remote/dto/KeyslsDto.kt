@@ -208,6 +208,8 @@ data class KPagoCargo(
 @Serializable
 data class KPago(
     val id: String,
+    /** Comprobante correlativo de la empresa (001-00001); lo manda el servidor. */
+    val folio: String? = null,
     val usuarioId: String? = null,
     val fecha: String,
     @Serializable(with = FlexDouble::class) val monto: Double,
@@ -357,6 +359,16 @@ data class KOrdenRequest(
     val sector: String? = null,
     val celular: String? = null,
     val observacion: String? = null,
+    // Plan (instalación, cambio de plan, reconexión): al completar la orden pasan al contrato.
+    val planId: String? = null,
+    val mbps: Int? = null,
+    val mensualidad: Double? = null,
+    // Datos de red (servicios con Internet).
+    val ipWan: String? = null,
+    val mascara: String? = null,
+    val gateway: String? = null,
+    val pppoeUsuario: String? = null,
+    val pppoePassword: String? = null,
 )
 
 @Serializable
@@ -408,6 +420,8 @@ data class KKpis(
     val contratosActivos: Int = 0,
     @Serializable(with = FlexDouble::class) val deudaContratosActivos: Double = 0.0,
     val contratosActivosConDeuda: Int = 0,
+    /** Contratos con cargos pendientes en cualquier estado; null si el backend aún no lo envía. */
+    val contratosConDeuda: Int? = null,
 )
 
 @Serializable

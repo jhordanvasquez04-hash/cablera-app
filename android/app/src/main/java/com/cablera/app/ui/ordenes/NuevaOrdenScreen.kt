@@ -62,6 +62,7 @@ fun NuevaOrdenScreen(
                     container.clientesRepository,
                     container.contratosRepository,
                     container.ordenesServicioRepository,
+                    container.planesRepository,
                 )
             },
         )
@@ -119,6 +120,20 @@ fun NuevaOrdenScreen(
                             }
                         }
                     }
+                }
+                if (uiState.permitePlan) {
+                    item { SeccionPlan(uiState, viewModel) }
+                } else if (uiState.contratoSeleccionado?.planNombre != null) {
+                    item {
+                        Text(
+                            "Plan actual: ${uiState.contratoSeleccionado?.planNombre}. El plan solo se cambia en instalación, cambio de plan o reconexión.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                if (uiState.requiereRed) {
+                    item { SeccionRed(uiState, viewModel) }
                 }
                 item {
                     OutlinedTextField(
@@ -198,6 +213,81 @@ fun NuevaOrdenScreen(
             } else if (uiState.error != null) {
                 item { Text(uiState.error ?: "", color = MaterialTheme.colorScheme.error) }
             }
+        }
+    }
+}
+
+/** Plan nuevo (se copian sus Mbps y precio), velocidad y mensualidad — como el formulario de la web. */
+@Composable
+private fun SeccionPlan(uiState: NuevaOrdenUiState, viewModel: NuevaOrdenViewModel) {
+    val esCambio = uiState.tipoOrden == "cambio_plan"
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(if (esCambio) "Plan nuevo" else "Plan", style = MaterialTheme.typography.labelSmall)
+        var menuPlan by remember { mutableStateOf(false) }
+        Box {
+            OutlinedButton(onClick = { menuPlan = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(uiState.planSeleccionado?.nombre ?: if (esCambio) "Elegir el nuevo plan" else "Sin plan")
+            }
+            DropdownMenu(expanded = menuPlan, onDismissRequest = { menuPlan = false }) {
+                if (!esCambio) DropdownMenuItem(text = { Text("Sin plan") }, onClick = { viewModel.onPlanChange(null); menuPlan = false })
+                uiState.planes.forEach { plan ->
+                    DropdownMenuItem(
+                        text = { Text("${plan.nombre} · S/ ${"%.2f".format(java.util.Locale.US, plan.precio)}") },
+                        onClick = { viewModel.onPlanChange(plan); menuPlan = false },
+                    )
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(
+                value = uiState.mbps, onValueChange = viewModel::onMbpsChange,
+                label = { Text("Mbps") }, singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f),
+            )
+            OutlinedTextField(
+                value = uiState.mensualidad, onValueChange = viewModel::onMensualidadChange,
+                label = { Text("Mensualidad (S/)") }, singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f),
+            )
+        }
+        if (esCambio) {
+            Text(
+                "Al completar la orden, el contrato pasa al plan y la mensualidad nuevos.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** IP WAN, máscara, gateway y PPPoE (servicios con Internet). Deben ser únicos; el servidor los valida. */
+@Composable
+private fun SeccionRed(uiState: NuevaOrdenUiState, viewModel: NuevaOrdenViewModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Datos de red", style = MaterialTheme.typography.labelSmall)
+        OutlinedTextField(
+            value = uiState.ipWan, onValueChange = viewModel::onIpWanChange,
+            label = { Text("IP WAN") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(
+                value = uiState.mascara, onValueChange = viewModel::onMascaraChange,
+                label = { Text("Máscara") }, singleLine = true, modifier = Modifier.weight(1f),
+            )
+            OutlinedTextField(
+                value = uiState.gateway, onValueChange = viewModel::onGatewayChange,
+                label = { Text("Gateway") }, singleLine = true, modifier = Modifier.weight(1f),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(
+                value = uiState.pppoeUsuario, onValueChange = viewModel::onPppoeUsuarioChange,
+                label = { Text("Usuario PPPoE") }, singleLine = true, modifier = Modifier.weight(1f),
+            )
+            OutlinedTextField(
+                value = uiState.pppoePassword, onValueChange = viewModel::onPppoePasswordChange,
+                label = { Text("Contraseña PPPoE") }, singleLine = true, modifier = Modifier.weight(1f),
+            )
         }
     }
 }

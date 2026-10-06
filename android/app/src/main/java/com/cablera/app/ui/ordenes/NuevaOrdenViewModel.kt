@@ -6,11 +6,13 @@ import com.cablera.app.data.remote.dto.ClienteDto
 import com.cablera.app.data.remote.dto.ContratoDto
 import com.cablera.app.data.remote.dto.CreateOrdenRequest
 import com.cablera.app.data.remote.dto.EstadosContrato
+import com.cablera.app.data.remote.dto.PlanDto
 import com.cablera.app.data.remote.dto.TecnicoResumenDto
 import com.cablera.app.data.remote.dto.TiposOrdenPorServicio
 import com.cablera.app.data.repository.ClientesRepository
 import com.cablera.app.data.repository.ContratosRepository
 import com.cablera.app.data.repository.OrdenesServicioRepository
+import com.cablera.app.data.repository.PlanesRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +42,16 @@ data class NuevaOrdenUiState(
     val observacion: String = "",
     val tecnicos: List<TecnicoResumenDto> = emptyList(),
     val tecnicoId: String? = null,
+    // Plan (solo en instalación, cambio de plan y reconexión) y datos de red; arrancan con los del contrato.
+    val planes: List<PlanDto> = emptyList(),
+    val planId: String? = null,
+    val mbps: String = "",
+    val mensualidad: String = "",
+    val ipWan: String = "",
+    val mascara: String = "",
+    val gateway: String = "",
+    val pppoeUsuario: String = "",
+    val pppoePassword: String = "",
     val guardando: Boolean = false,
     val error: String? = null,
 ) {
@@ -48,7 +60,34 @@ data class NuevaOrdenUiState(
         get() = clienteSeleccionado?.contratos.orEmpty().filter { it.estado != EstadosContrato.BAJA }
 
     val tiposDisponibles: List<String>
-        get() = contratoSeleccionado?.let { TiposOrdenPorServicio.de(it.tipoServicio) }.orEmpty()
+        get() = contratoSeleccionado?.let { tiposPermitidos(it.tipoServicio) }.orEmpty()
+
+    /** Como en la web: el plan solo se elige al instalar, cambiar de plan o reconectar. */
+    val permitePlan: Boolean
+        get() = tipoOrden in TIPOS_CON_PLAN
+
+    val planSeleccionado: PlanDto?
+        get() = planes.find { it.id == planId }
+
+    /** Los datos de red (IP, PPPoE) dependen del servicio del plan NUEVO si se está eligiendo uno, si no del contrato. */
+    val requiereRed: Boolean
+        get() {
+            val servicio = (if (permitePlan) planSeleccionado?.tipoServicio else null) ?: contratoSeleccionado?.tipoServicio
+            return servicio == "internet" || servicio == "duo"
+        }
+
+    companion object {
+        val TIPOS_CON_PLAN = setOf("instalacion", "cambio_plan", "reconexion")
+
+        /**
+         * Desde el celular solo se piden los cambios de plan, dirección y contraseña; el resto de servicios
+         * técnicos (instalaciones, averías, cortes, etc.) se crean desde el panel web.
+         */
+        private val TIPOS_DESDE_APP = setOf("cambio_plan", "cambio_domicilio", "cambio_contrasena")
+
+        fun tiposPermitidos(tipoServicio: String): List<String> =
+            TiposOrdenPorServicio.de(tipoServicio).filter { it in TIPOS_DESDE_APP }
+    }
 }
 
 class NuevaOrdenViewModel(
@@ -57,6 +96,7 @@ class NuevaOrdenViewModel(
     private val clientesRepository: ClientesRepository,
     private val contratosRepository: ContratosRepository,
     private val ordenesRepository: OrdenesServicioRepository,
+    private val planesRepository: PlanesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NuevaOrdenUiState())
@@ -69,6 +109,9 @@ class NuevaOrdenViewModel(
             ordenesRepository.listarTecnicos().onSuccess { tecnicos ->
                 _uiState.value = _uiState.value.copy(tecnicos = tecnicos.filter { it.activo })
             }
+        }
+        viewModelScope.launch {
+            planesRepository.listar().onSuccess { planes -> _uiState.value = _uiState.value.copy(planes = planes) }
         }
         // Desde la ficha de un cliente: llega con el cliente ya elegido (y su contrato, si tiene uno solo).
         if (clienteIdFijo != null && contratoIdFijo == null) {
@@ -129,15 +172,42 @@ class NuevaOrdenViewModel(
             cargandoContrato = false,
             contratoSeleccionado = contrato,
             // El tipo elegido solo sigue valiendo si también existe para el servicio de este contrato.
-            tipoOrden = actual.tipoOrden?.takeIf { it in TiposOrdenPorServicio.de(contrato.tipoServicio) },
+            tipoOrden = actual.tipoOrden?.takeIf { it in NuevaOrdenUiState.tiposPermitidos(contrato.tipoServicio) },
             abonado = contrato.clienteNombre,
             dni = contrato.clienteDni.orEmpty(),
             celular = contrato.clienteTelefono.orEmpty(),
             direccion = contrato.direccion.orEmpty(),
             referencia = contrato.referencia.orEmpty(),
+            // Plan y red actuales del contrato (en un cambio de plan se reemplazan al elegir el nuevo plan).
+            planId = contrato.planId,
+            mbps = contrato.mbps?.toString().orEmpty(),
+            mensualidad = if (contrato.costoMensual > 0) "%.2f".format(java.util.Locale.US, contrato.costoMensual) else "",
+            ipWan = contrato.ipWan.orEmpty(),
+            mascara = contrato.mascara.orEmpty(),
+            gateway = contrato.gateway.orEmpty(),
+            pppoeUsuario = contrato.pppoeUsuario.orEmpty(),
+            pppoePassword = contrato.pppoePassword.orEmpty(),
             error = null,
         )
     }
+
+    /** Al elegir un plan sus Mbps y precio pasan al formulario (igual que la web), para que no queden los del plan anterior. */
+    fun onPlanChange(plan: PlanDto?) {
+        val actual = _uiState.value
+        _uiState.value = actual.copy(
+            planId = plan?.id,
+            mbps = if (plan != null) plan.mbps?.toString().orEmpty() else actual.mbps,
+            mensualidad = if (plan != null) "%.2f".format(java.util.Locale.US, plan.precio) else actual.mensualidad,
+            error = null,
+        )
+    }
+    fun onMbpsChange(v: String) { _uiState.value = _uiState.value.copy(mbps = v.filter(Char::isDigit)) }
+    fun onMensualidadChange(v: String) { _uiState.value = _uiState.value.copy(mensualidad = v.replace(',', '.'), error = null) }
+    fun onIpWanChange(v: String) { _uiState.value = _uiState.value.copy(ipWan = v) }
+    fun onMascaraChange(v: String) { _uiState.value = _uiState.value.copy(mascara = v) }
+    fun onGatewayChange(v: String) { _uiState.value = _uiState.value.copy(gateway = v) }
+    fun onPppoeUsuarioChange(v: String) { _uiState.value = _uiState.value.copy(pppoeUsuario = v) }
+    fun onPppoePasswordChange(v: String) { _uiState.value = _uiState.value.copy(pppoePassword = v) }
 
     // --- Datos de la orden ---
     fun onTipoOrdenChange(v: String) { _uiState.value = _uiState.value.copy(tipoOrden = v, error = null) }
@@ -164,6 +234,17 @@ class NuevaOrdenViewModel(
             _uiState.value = estado.copy(error = "El nombre del abonado y la dirección son obligatorios")
             return
         }
+        // Un cambio de plan sin plan nuevo dejaría el contrato sin plan ni mensualidad al completarlo.
+        if (estado.tipoOrden == "cambio_plan" && estado.planId == null) {
+            _uiState.value = estado.copy(error = "Elige el nuevo plan")
+            return
+        }
+        val mensualidad = estado.mensualidad.trim().takeIf { it.isNotEmpty() }?.let { texto ->
+            texto.toDoubleOrNull()?.takeIf { it >= 0 } ?: run {
+                _uiState.value = estado.copy(error = "La mensualidad no es un monto válido")
+                return
+            }
+        }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(guardando = true, error = null)
             ordenesRepository.crear(
@@ -179,6 +260,14 @@ class NuevaOrdenViewModel(
                     celular = estado.celular.ifBlank { null },
                     observacion = estado.observacion.ifBlank { null },
                     tecnicoId = estado.tecnicoId,
+                    planId = estado.planId,
+                    mbps = estado.mbps.toIntOrNull(),
+                    mensualidad = mensualidad,
+                    ipWan = estado.ipWan.ifBlank { null },
+                    mascara = estado.mascara.ifBlank { null },
+                    gateway = estado.gateway.ifBlank { null },
+                    pppoeUsuario = estado.pppoeUsuario.ifBlank { null },
+                    pppoePassword = estado.pppoePassword.ifBlank { null },
                 ),
             )
                 .onSuccess { orden ->

@@ -124,6 +124,7 @@ fun KContrato.toUi() = ContratoDto(
     clienteTelefono = cliente?.telefono,
     planId = planId,
     planNombre = plan?.nombre,
+    mbps = mbps ?: plan?.mbps,
     costoMensual = costoMensual ?: plan?.precio ?: 0.0,
     diaCorte = diaCorte,
     deudaPendiente = deudaPendiente,
@@ -225,8 +226,8 @@ fun KCargo.toPendienteUi(numeroContrato: String? = null, tipoServicio: String? =
 
 // --- Pagos ("boletas") ---
 
-/** Un pago de Keysls no trae folio propio: se arma uno corto y estable a partir de su id. */
-private fun folioDe(id: String) = "P-" + id.take(8).uppercase()
+/** Folio del servidor (001-00001). Solo si un servidor viejo no lo manda se arma uno corto a partir del id. */
+private fun KPago.folioDe() = folio ?: ("P-" + id.take(8).uppercase())
 
 private fun KPago.cliente(): BoletaClienteDto {
     val c = cargos.firstOrNull()?.cargo?.contrato?.cliente
@@ -247,7 +248,7 @@ private fun KPago.estadoBoleta() = if (anulado) EstadosBoleta.ANULADA else Estad
 
 fun KPago.toBoletaResumen() = BoletaResumenDto(
     id = id,
-    folio = folioDe(id),
+    folio = folioDe(),
     fecha = fecha,
     cliente = cliente(),
     concepto = concepto(),
@@ -258,7 +259,7 @@ fun KPago.toBoletaResumen() = BoletaResumenDto(
 
 fun KPago.toBoletaDetalle() = BoletaDetalleDto(
     id = id,
-    folio = folioDe(id),
+    folio = folioDe(),
     fecha = fecha,
     cliente = cliente(),
     concepto = concepto(),

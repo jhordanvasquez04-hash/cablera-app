@@ -1,5 +1,6 @@
 package com.cablera.app.ui.ordenes
 
+import com.cablera.app.ui.common.ItemAnimado
 import androidx.compose.foundation.layout.Arrangement
 import com.cablera.app.ui.theme.MonoStyles
 import com.cablera.app.ui.theme.CableraNeutral
@@ -121,8 +122,9 @@ fun OrdenesServicioListScreen(
                     if (ordenes.isEmpty()) {
                         item { EmptyState(mensaje = "No hay servicios técnicos con este filtro.", icon = Icons.Filled.Assignment) }
                     }
-                    items(ordenes, key = { it.id }) { orden ->
+                    items(ordenes, key = { it.id }) { orden -> ItemAnimado {
                         OrdenCard(orden = orden, onClick = { navController.navigate(Routes.ordenServicioDetalle(orden.id)) })
+                    }
                     }
                     pieDeLista(hayMas = uiState.hayMas, cargandoMas = uiState.cargandoMas, onVerMas = viewModel::verMas)
                 }

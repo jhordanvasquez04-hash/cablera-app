@@ -1,5 +1,8 @@
 package com.cablera.app.ui.clientes
 
+import com.cablera.app.ui.theme.colorCabecera
+import androidx.compose.ui.graphics.Color
+import com.cablera.app.ui.common.ItemAnimado
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.IconButton
@@ -108,7 +111,7 @@ fun ClienteFichaScreen(
     }
 
     Scaffold(
-        topBar = { AppHeader(titulo = "Ficha del cliente", onBack = { navController.popBackStack() }) },
+        topBar = { AppHeader(titulo = "Ficha del cliente", onBack = { navController.popBackStack() }, curva = false) },
     ) { padding ->
         StateContent(state = uiState.ficha, onRetry = viewModel::cargar, modifier = Modifier.padding(padding)) { ficha ->
             FichaContent(
@@ -198,11 +201,12 @@ private fun FichaContent(
     val cliente = ficha.cliente
     Column(modifier = Modifier.fillMaxWidth()) {
         Card(
-            shape = RoundedCornerShape(0.dp),
-            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+            // Continúa la cabecera negra (sin curva, ver AppHeader) y cierra con esquinas redondeadas abajo
+            shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = colorCabecera()),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            val onHero = MaterialTheme.colorScheme.onPrimary
+            val onHero = Color.White
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.Top) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -230,7 +234,7 @@ private fun FichaContent(
                     Button(
                         onClick = onCobroRapido,
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = onHero, contentColor = MaterialTheme.colorScheme.primary),
+                        colors = ButtonDefaults.buttonColors(containerColor = onHero, contentColor = colorCabecera()),
                     ) { Text("Cobro rápido") }
                     OutlinedButton(
                         onClick = onElegirCargos,
@@ -245,7 +249,7 @@ private fun FichaContent(
         TabRow(selectedTabIndex = tabSeleccionada) {
             Tab(selected = tabSeleccionada == 0, onClick = { onTabChange(0) }, text = { Text("Deuda") })
             Tab(selected = tabSeleccionada == 1, onClick = { onTabChange(1) }, text = { Text("Pagos") })
-            Tab(selected = tabSeleccionada == 2, onClick = { onTabChange(2) }, text = { Text("Servicios técnicos", maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelLarge) })
+            if (rolGestor) Tab(selected = tabSeleccionada == 2, onClick = { onTabChange(2) }, text = { Text("Servicios técnicos", maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelLarge) })
         }
 
         when (tabSeleccionada) {
@@ -260,7 +264,7 @@ private fun FichaContent(
                 onBajaContrato = onBajaContrato,
             )
             1 -> TabPagos(ficha = ficha, onVerBoleta = onVerBoleta, onVerTodasLasBoletas = onVerTodasLasBoletas)
-            else -> TabServiciosTecnicos(
+            else -> if (rolGestor) TabServiciosTecnicos(
                 ficha = ficha,
                 onVerServicio = onVerServicio,
                 onNuevoServicio = onNuevoServicio,
@@ -302,7 +306,7 @@ private fun TabDeuda(
         if (cliente.contratos.isEmpty()) {
             item { EmptyState(mensaje = "Este cliente todavía no tiene contratos.") }
         }
-        items(cliente.contratos, key = { it.id }) { contrato ->
+        items(cliente.contratos, key = { it.id }) { contrato -> ItemAnimado {
             ContratoCard(
                 contrato = contrato,
                 rolGestor = rolGestor,
@@ -312,6 +316,7 @@ private fun TabDeuda(
                 onCortar = { onCortarContrato(contrato.id) },
                 onBaja = { onBajaContrato(contrato.id) },
             )
+        }
         }
         item { Text("Deuda mes a mes", style = MaterialTheme.typography.titleMedium) }
         val cargosPendientes = ficha.cargosMesAMes.filter { it.estado != "pagado" }
@@ -403,8 +408,9 @@ private fun TabPagos(ficha: ClienteFichaDto, onVerBoleta: (String) -> Unit, onVe
         if (ficha.historialPagos.isEmpty()) {
             item { EmptyState(mensaje = "Sin pagos registrados todavía.") }
         }
-        items(ficha.historialPagos, key = { it.id }) { boleta ->
+        items(ficha.historialPagos, key = { it.id }) { boleta -> ItemAnimado {
             BoletaHistorialRow(boleta = boleta, onClick = { onVerBoleta(boleta.id) })
+        }
         }
         item {
             TextButton(onClick = onVerTodasLasBoletas) { Text("Ver todos los pagos") }
@@ -428,7 +434,7 @@ private fun TabServiciosTecnicos(
         if (ficha.serviciosTecnicos.isEmpty()) {
             item { EmptyState(mensaje = "Este cliente todavía no tiene servicios técnicos.") }
         }
-        items(ficha.serviciosTecnicos, key = { it.id }) { orden ->
+        items(ficha.serviciosTecnicos, key = { it.id }) { orden -> ItemAnimado {
             Card(onClick = { onVerServicio(orden.id) }) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -454,6 +460,7 @@ private fun TabServiciosTecnicos(
                     }
                 }
             }
+        }
         }
         item {
             TextButton(onClick = onVerTodos) { Text("Ver todos los servicios técnicos") }

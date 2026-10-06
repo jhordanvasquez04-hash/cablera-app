@@ -81,6 +81,15 @@ data class CreateOrdenRequest(
     val observacion: String? = null,
     /** Si viene, la orden se crea y se asigna de inmediato a ese técnico. */
     val tecnicoId: String? = null,
+    /** Plan, velocidad y mensualidad de la orden; en un cambio de plan son los NUEVOS y pasan al contrato al completarla. */
+    val planId: String? = null,
+    val mbps: Int? = null,
+    val mensualidad: Double? = null,
+    val ipWan: String? = null,
+    val mascara: String? = null,
+    val gateway: String? = null,
+    val pppoeUsuario: String? = null,
+    val pppoePassword: String? = null,
 )
 
 /** Tipos de orden que Keysls permite según el servicio del contrato. */

@@ -1,5 +1,6 @@
 package com.cablera.app.ui.contratos
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,7 +81,7 @@ fun ContratoNuevoScreen(
                     // salir sin crear un contrato ahora mismo — el back arrow iría a Home.
                     if (clienteIdFijo != null) {
                         TextButton(onClick = { navController.navigate(Routes.clienteFicha(clienteIdFijo)) { popUpTo(Routes.HOME) } }) {
-                            Text("Omitir por ahora", color = MaterialTheme.colorScheme.onPrimary)
+                            Text("Omitir por ahora", color = Color.White)
                         }
                     }
                 },
